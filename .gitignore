@@ -1,0 +1,5 @@
+.paper-nms
+run
+.run
+# Project exclude paths
+/target/

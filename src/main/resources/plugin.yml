@@ -1,0 +1,18 @@
+name: NautilusCosmetics
+version: '${project.version}'
+main: io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics
+api-version: 1.19
+authors: [MaliciousFiles]
+description: Handles everything cosmetic for the Nautilus Minecraft server.
+depend:
+  - NautilusGUI
+commands:
+  cosmetics:
+    description: Base command for cosmetics.
+    usage: /cosmetics <subcommand> [args]
+  nickname:
+    description: Gets a player's nickname. Only available to staff.
+    usage: /nickname <list|original|nickname> [page|name]
+  formatting:
+    description: Help command for sponsor chat formatting.
+    usage: /formatting [code|name]
