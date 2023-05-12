@@ -40,15 +40,15 @@ public class SystemMessageStyler implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
-        e.deathMessage(styleMessage((TranslatableComponent) e.deathMessage()));
+        //e.deathMessage(styleMessage((TranslatableComponent) e.deathMessage()));
         TextComponent tc = Component.text("").append(e.getPlayer().displayName())
-                .append(Component.text(e.getDeathMessage().substring(e.getPlayer().getName().length())));
+                .append(Component.text(e.getDeathMessage().replace(e.getPlayer().getName(), "")));
         addToRunning(tc);
     }
 
     @EventHandler(priority=EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent e) {
-        e.joinMessage(styleMessage((TranslatableComponent) e.joinMessage()));
+        //e.joinMessage(styleMessage((TranslatableComponent) e.joinMessage()));
         TextComponent tc = Component.text(ChatColor.GREEN + "Join " + ChatColor.WHITE + "| ").append(e.getPlayer().displayName());
         addToRunning(tc);
     }
@@ -62,7 +62,7 @@ public class SystemMessageStyler implements Listener {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e) {
-        e.quitMessage(styleMessage((TranslatableComponent) e.quitMessage()));
+        //e.quitMessage(styleMessage((TranslatableComponent) e.quitMessage()));
         TextComponent tc = Component.text(ChatColor.DARK_RED + "Leave " + ChatColor.WHITE + "| ").append(e.getPlayer().displayName());
         addToRunning(tc);
     }
