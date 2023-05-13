@@ -1,6 +1,7 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -35,13 +36,13 @@ public class FormattingCommand implements CommandExecutor, TabCompleter {
 
         commandSender.sendMessage(Component.empty().append(Component.text("Codes ").color(TextColor.color(247, 255, 152)).decorate(TextDecoration.BOLD)).append(Component.text("`x").color(TextColor.color(251, 255, 227))));
         commandSender.sendMessage(Component.text("    Default Minecraft chat code (0-9,a-f,k-o,r)").color(TextColor.color(247, 255, 152)));
-        commandSender.sendMessage(Component.text("    `l`cBold and Red → ").color(TextColor.color(247, 255, 152)).append(Component.text("Bold and Red").decorate(TextDecoration.BOLD).color(TextColor.color(ChatFormatting.RED.getColor()))));
+        commandSender.sendMessage(Component.text("    `l`cBold and Red → ").color(TextColor.color(247, 255, 152)).append(Component.text("Bold and Red").decorate(TextDecoration.BOLD).color(PaperAdventure.asAdventure(ChatFormatting.RED))));
 
         commandSender.sendMessage(Component.empty());
 
         commandSender.sendMessage(Component.empty().append(Component.text("Names ").decorate(TextDecoration.BOLD).color(TextColor.color(247, 255, 152))).append(Component.text("``name").color(TextColor.color(251, 255, 227))));
         commandSender.sendMessage(Component.text("    Full name of the color or format").color(TextColor.color(247, 255, 152)));
-        commandSender.sendMessage(Component.text("    ``bold``redBold and Red → ").color(TextColor.color(247, 255, 152)).append(Component.text("Bold and Red").decorate(TextDecoration.BOLD).color(TextColor.color(ChatFormatting.RED.getColor()))));
+        commandSender.sendMessage(Component.text("    ``bold``redBold and Red → ").color(TextColor.color(247, 255, 152)).append(Component.text("Bold and Red").decorate(TextDecoration.BOLD).color(PaperAdventure.asAdventure(ChatFormatting.RED))));
 
         commandSender.sendMessage(Component.empty());
 

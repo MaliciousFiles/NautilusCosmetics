@@ -264,10 +264,10 @@ public class CosmeticsMenu {
                                                         !sender.hasPermission("nautiluscosmetics.perks.nickname") ? Component.text(" - No special characters").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)) : null
                                                 ).filter(Objects::nonNull).toArray(Component[]::new))
                                         .setWindowName("Nickname")
-                                        .setAction(e-> Nickname.setNickname((Player) e.getWhoClicked(), e.getCurrentItem().getItemMeta().displayName(), true))
+                                        .setAction(e-> Nickname.setNickname((Player) e.getWhoClicked(), NautilusCosmetics.getTextContent(e.getCurrentItem().getItemMeta().displayName()), true))
                                         .setCloseOnClick(true)
                                         .setGenerateResult((anvil) -> {
-                                            if (Nickname.validateNickname((Player) sender, Component.text(anvil.itemName)) == null) {
+                                            if (Nickname.validateNickname((Player) sender, anvil.itemName) == null) {
                                                 return new net.minecraft.world.item.ItemStack(Items.OAK_SIGN)
                                                         .setHoverName(net.minecraft.network.chat.Component.literal(anvil.itemName).setStyle(net.minecraft.network.chat.Style.EMPTY.withItalic(false)));
                                             } else {

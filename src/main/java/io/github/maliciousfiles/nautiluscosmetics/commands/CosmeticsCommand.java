@@ -173,13 +173,13 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
                 return;
             }
 
-            String error = Nickname.validateNickname((Player) sender, Component.text(strings[2]));
+            String error = Nickname.validateNickname((Player) sender, strings[2]);
             if (error != null) {
                 sender.sendMessage(Component.text(error).style(Style.style(NautilusCosmetics.ERROR_COLOR)));
                 return;
             }
 
-            Nickname.setNickname(player, Component.text(strings[2]), true);
+            Nickname.setNickname(player, strings[2], true);
 
             return;
         }
@@ -220,7 +220,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
             NameColor.setNameColor(player, FancyText.ColorType.SOLID, true, TextColor.color(255, 255, 255));
             return;
         } else if (strings[1].equals("nickname")) {
-            Nickname.setNickname(player, Component.text(player.getName()), true);
+            Nickname.setNickname(player, player.getName(), true);
             return;
         }
 

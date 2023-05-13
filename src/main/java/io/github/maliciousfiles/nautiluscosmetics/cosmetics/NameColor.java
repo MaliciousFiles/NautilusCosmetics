@@ -51,6 +51,7 @@ public class NameColor {
 
         player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
         player.playerListName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.playerListName()), color.colors));
+        NautilusCosmetics.setNameTag(player, player.displayName());
     }
 
     public static class NameColorListener implements Listener {

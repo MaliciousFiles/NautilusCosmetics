@@ -36,8 +36,8 @@ public class NicknameCommand implements CommandExecutor, TabCompleter {
         if (strings.length < 1) return false;
 
         Consumer<OfflinePlayer> sendNickname = p -> {
-            Component nick = Nickname.getPlayerName(p);
-            commandSender.sendMessage(Component.text(p.getName()).append(Component.text(" → ").color(COLOR)).append(p instanceof Player pl ? pl.displayName() : nick != null ? nick : Component.text(p.getName())));
+            String nick = Nickname.getPlayerName(p);
+            commandSender.sendMessage(Component.text(p.getName()).append(Component.text(" → ").color(COLOR)).append(p instanceof Player pl ? pl.displayName() : Component.text(nick != null ? nick : p.getName())));
         };
 
         switch (strings[0]) {
@@ -99,8 +99,8 @@ public class NicknameCommand implements CommandExecutor, TabCompleter {
                     out.add(p.getName());
                 }
             } else if (strings[0].equals("nickname")) {
-                for (Component n : Nickname.getNicknames()) {
-                    out.add(NautilusCosmetics.getTextContent(n));
+                for (String n : Nickname.getNicknames()) {
+                    out.add(n);
                 }
             }
         }

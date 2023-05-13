@@ -1,6 +1,7 @@
 package io.github.maliciousfiles.nautiluscosmetics.cosmetics;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -84,7 +85,7 @@ public class SponsorChatEffects implements Listener {
                             message = message.append(building);
                             building = Component.empty().style(building.style());
 
-                            if (formatting.isColor()) building = building.color(TextColor.color(formatting.getColor()));
+                            if (formatting.isColor()) building = building.color(PaperAdventure.asAdventure(formatting));
                             else if (formatting.isFormat()) building = building.decorate(formatting == ChatFormatting.UNDERLINE ? TextDecoration.UNDERLINED : TextDecoration.valueOf(formatting.name()));
                             else building = building.style(Style.empty());
 
