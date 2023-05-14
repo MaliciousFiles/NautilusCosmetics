@@ -29,10 +29,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.time.ZoneId;
+import java.util.*;
 
 public class SystemMessageStyler implements Listener {
 
@@ -149,7 +147,7 @@ public class SystemMessageStyler implements Listener {
     public void onMessage(AsyncChatEvent e) {
         e.setCancelled(true);
 
-        Calendar c = GregorianCalendar.getInstance();
+        Calendar c = GregorianCalendar.getInstance(TimeZone.getTimeZone("CST"), e.getPlayer().locale());
 
         if (e.getPlayer().hasPermission("nautiluscosmetics.chat.formatting")) {
             String contents = NautilusCosmetics.getTextContent(e.message());

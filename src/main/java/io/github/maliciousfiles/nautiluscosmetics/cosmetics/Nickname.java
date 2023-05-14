@@ -23,9 +23,9 @@ public class Nickname {
         return playerNames.get(p.getUniqueId());
     }
     public static OfflinePlayer getPlayerFromNickname(String nickname) {
-        if (!playerNames.containsValue(Component.text(nickname))) return null;
+        if (!playerNames.containsValue(nickname)) return null;
 
-        String name = Bukkit.getOfflinePlayer(playerNames.inverse().get(Component.text(nickname))).getName();
+        String name = Bukkit.getOfflinePlayer(playerNames.inverse().get(nickname)).getName();
         if (name == null) return null;
 
         return Bukkit.getOfflinePlayerIfCached(name);
@@ -35,6 +35,12 @@ public class Nickname {
     }
 
     public static void setNickname(Player p, String name, boolean sendMessage) {
+        if (name.equals(p.getName())) {
+            playerNames.remove(p.getUniqueId());
+        } else {
+            playerNames.put(p.getUniqueId(), name);
+        }
+
         p.displayName(Component.text(name));
         NautilusCosmetics.setNameTag(p, Component.text(name));
 
@@ -42,7 +48,6 @@ public class Nickname {
 
         if (sendMessage) p.sendMessage(Component.text("Nickname set to ").append(p.displayName()));
 
-       playerNames.put(p.getUniqueId(), name);
     }
 
     public static String validateNickname(Player p, String name) {
@@ -57,7 +62,7 @@ public class Nickname {
     }
 
     public static class NicknameListener implements Listener {
-        @EventHandler
+        @EventHandler(priority=org.bukkit.event.EventPriority.HIGHEST)
         public void onPlayerJoin(PlayerJoinEvent e) {
             String nick = getPlayerName(e.getPlayer());
 
