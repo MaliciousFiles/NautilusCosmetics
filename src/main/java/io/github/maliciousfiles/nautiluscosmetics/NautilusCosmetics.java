@@ -7,9 +7,12 @@ import io.github.maliciousfiles.nautiluscosmetics.commands.NicknameCommand;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Optionull;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.RemoteChatSession;
@@ -95,5 +98,11 @@ public final class NautilusCosmetics extends JavaPlugin {
         for (Component child : component.children()) out += getTextContent(child);
 
         return out;
+    }
+
+    public static Component format(Component component, ChatFormatting formatting) {
+        if (formatting.isColor()) return component.color(PaperAdventure.asAdventure(formatting));
+        else if (formatting.isFormat()) return component.decorate(formatting == ChatFormatting.UNDERLINE ? TextDecoration.UNDERLINED : TextDecoration.valueOf(formatting.name()));
+        else return component;
     }
 }

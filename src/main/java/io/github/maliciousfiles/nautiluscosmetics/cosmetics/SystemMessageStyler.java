@@ -183,10 +183,7 @@ public class SystemMessageStyler implements Listener {
 
                         if (formatting != null) {
                             message = message.append(building);
-                            building = Component.empty().style(building.style());
-
-                            if (formatting.isColor()) building = building.color(PaperAdventure.asAdventure(formatting));
-                            else building = building.decorate(formatting == ChatFormatting.UNDERLINE ? TextDecoration.UNDERLINED : TextDecoration.valueOf(formatting.name()));
+                            building = NautilusCosmetics.format(Component.empty().style(building.style()), formatting);
 
                             i++;
                             consumed = true;

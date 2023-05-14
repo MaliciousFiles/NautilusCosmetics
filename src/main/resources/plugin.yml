@@ -15,4 +15,4 @@ commands:
     usage: /nickname <list|original|nickname> [page|name]
   formatting:
     description: Help command for sponsor chat formatting.
-    usage: /formatting [code|name]
+    usage: /formatting [code|name] [page]
