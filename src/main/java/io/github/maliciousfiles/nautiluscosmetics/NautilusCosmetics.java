@@ -71,11 +71,7 @@ public final class NautilusCosmetics extends JavaPlugin {
     }
 
     public static void updateNameTag(Player player, Component name, Collection<? extends Player> players) {
-        String text = "";
-
-        for (int i = 0; i < 8; i++) {
-            text += "§" + ChatFormatting.values()[(player.getEntityId() >> (4*i)) % 16].getChar();
-        }
+        String text = "%08x".formatted(player.getEntityId()).replaceAll("(.)", "§$1");
 
         existingNames.add(text);
 
