@@ -50,7 +50,6 @@ public class NameColor {
         if (sendMessage) player.sendMessage(FancyText.colorText(color.type, "Name color changed", color.colors));
 
         player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
-        player.playerListName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.playerListName()), color.colors));
         NautilusCosmetics.setNameTag(player, player.displayName());
     }
 

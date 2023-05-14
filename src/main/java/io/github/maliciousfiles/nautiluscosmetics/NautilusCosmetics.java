@@ -52,7 +52,7 @@ public final class NautilusCosmetics extends JavaPlugin {
     }
 
     public static void setNameTag(Player player, Component name) {
-        ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
+        /*ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
 
         nmsPlayer.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(player.getUniqueId())));
 
@@ -88,7 +88,7 @@ public final class NautilusCosmetics extends JavaPlugin {
             nms.connection.send(new ClientboundRemoveEntitiesPacket(player.getEntityId()));
             nmsPlayer.connection.send(new ClientboundPlayerInfoUpdatePacket(buf));
             nms.connection.send(new ClientboundAddPlayerPacket(((CraftPlayer) player).getHandle()));
-        }
+        }*/
     }
 
     public static String getTextContent(Component component) {

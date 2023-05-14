@@ -36,7 +36,6 @@ public class Nickname {
 
     public static void setNickname(Player p, String name, boolean sendMessage) {
         p.displayName(Component.text(name));
-        p.playerListName(Component.text(name));
         NautilusCosmetics.setNameTag(p, Component.text(name));
 
         if (NameColor.getNameColor(p) != null) NameColor.setNameColor(p, NameColor.getNameColor(p), false);
