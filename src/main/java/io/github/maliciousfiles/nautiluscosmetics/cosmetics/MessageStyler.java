@@ -7,6 +7,7 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.ChatFormatting;
@@ -17,22 +18,21 @@ import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.Team;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-import java.time.ZoneId;
 import java.util.*;
 
-public class SystemMessageStyler implements Listener {
+public class MessageStyler implements Listener {
+
+    public static final TimeZone TIME_ZONE = TimeZone.getTimeZone("CST");
 
     public EvictingQueue<Component> runningMessages = EvictingQueue.create(50);
 
@@ -147,7 +147,7 @@ public class SystemMessageStyler implements Listener {
     public void onMessage(AsyncChatEvent e) {
         e.setCancelled(true);
 
-        Calendar c = GregorianCalendar.getInstance(TimeZone.getTimeZone("CST"), e.getPlayer().locale());
+        Calendar c = GregorianCalendar.getInstance(TIME_ZONE, e.getPlayer().locale());
 
         if (e.getPlayer().hasPermission("nautiluscosmetics.chat.formatting")) {
             String contents = NautilusCosmetics.getTextContent(e.message());
@@ -181,7 +181,7 @@ public class SystemMessageStyler implements Listener {
 
                         if (formatting != null) {
                             message = message.append(building);
-                            building = NautilusCosmetics.format(Component.empty().style(building.style()), formatting);
+                            building = NautilusCosmetics.format(Component.empty().style(formatting != ChatFormatting.RESET ? building.style() : Style.empty()), formatting);
 
                             i++;
                             consumed = true;
@@ -194,7 +194,7 @@ public class SystemMessageStyler implements Listener {
                 }
             }
 
-            e.message(message.append(building));
+            e.message(message.append(building).color(TextColor.color(200, 200, 200)));
         }
 
         Component message = Component.empty()
