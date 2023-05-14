@@ -200,7 +200,7 @@ public class SystemMessageStyler implements Listener {
         }
 
         Component message = Component.empty()
-                .append(Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(47, 250, 255)).decorate(TextDecoration.BOLD))
+                .append(Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(34, 150, 155)))
                 .append(e.getPlayer().displayName())
                 .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
                 .append(e.message());
