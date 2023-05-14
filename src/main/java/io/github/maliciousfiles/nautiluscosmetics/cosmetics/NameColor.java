@@ -50,13 +50,18 @@ public class NameColor {
         if (sendMessage) player.sendMessage(FancyText.colorText(color.type, "Name color changed", color.colors));
 
         player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
-        NautilusCosmetics.setNameTag(player, player.displayName());
+        NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
     }
 
     public static class NameColorListener implements Listener {
         @EventHandler
         public void onPlayerJoin(PlayerJoinEvent e) {
             if (getNameColor(e.getPlayer()) != null) setNameColor(e.getPlayer(), getNameColor(e.getPlayer()), false);
+
+            for (Map.Entry<UUID, NameColor> entry : playerColors.entrySet()) {
+                Player p = Bukkit.getPlayer(entry.getKey());
+                NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
+            }
         }
     }
 }

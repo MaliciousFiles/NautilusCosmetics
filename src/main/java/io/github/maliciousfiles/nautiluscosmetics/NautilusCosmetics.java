@@ -1,23 +1,36 @@
 package io.github.maliciousfiles.nautiluscosmetics;
 
+import com.mojang.authlib.GameProfile;
 import io.github.maliciousfiles.nautiluscosmetics.commands.CosmeticsCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.FormattingCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.NicknameCommand;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.*;
+import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public final class NautilusCosmetics extends JavaPlugin {
 
     public static NautilusCosmetics INSTANCE;
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
+
+    private static final List<String> existingNames = new ArrayList<>();
 
     @Override
     public void onEnable() {
@@ -33,44 +46,54 @@ public final class NautilusCosmetics extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
     }
 
-    public static void setNameTag(Player player, Component name) {
-        /*ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
+    public static void setNameTagName(Player player, String name, Collection<? extends Player> players) {
+        ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
+        GameProfile oldProfile = nmsPlayer.gameProfile;
+        nmsPlayer.gameProfile = new GameProfile(player.getUniqueId(), name);
+        nmsPlayer.gameProfile.getProperties().putAll(oldProfile.getProperties());
 
-        nmsPlayer.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(player.getUniqueId())));
+        ClientboundPlayerInfoRemovePacket remove = new ClientboundPlayerInfoRemovePacket(List.of(player.getUniqueId()));
+        ClientboundPlayerInfoUpdatePacket update = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(nmsPlayer));
+        nmsPlayer.gameProfile = oldProfile;
 
-        GameProfile profile = new GameProfile(player.getUniqueId(), getTextContent(name));
-        profile.getProperties().putAll(nmsPlayer.gameProfile.getProperties());
+        for (Player p : players) {
+            if (p == player) continue;
+            ServerPlayer nms = ((CraftPlayer) p).getHandle();
 
-        FriendlyByteBuf buf = new FriendlyByteBuf(ByteBufAllocator.DEFAULT.buffer());
-        buf.writeEnumSet(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER), ClientboundPlayerInfoUpdatePacket.Action.class);
-        buf.writeCollection(List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player.getUniqueId(), profile, true, nmsPlayer.latency, nmsPlayer.gameMode.getGameModeForPlayer(), nmsPlayer.getTabListDisplayName(), Optionull.map(nmsPlayer.getChatSession(), RemoteChatSession::asData))),
-                (buf2, entry) -> {
-                    buf2.writeUUID(entry.profileId());
+            nms.connection.send(remove);
+            nms.connection.send(update);
 
-                    buf2.writeUtf(entry.profile().getName(), 16);
-                    buf2.writeGameProfileProperties(entry.profile().getProperties());
-                });
-        nmsPlayer.connection.send(new ClientboundPlayerInfoUpdatePacket(buf));
+            if (nmsPlayer.tracker != null) {
+                nmsPlayer.tracker.serverEntity.removePairing(nms);
+                nmsPlayer.tracker.serverEntity.addPairing(nms);
+            }
+        }
+    }
 
+    public static void updateNameTag(Player player, Component name, Collection<? extends Player> players) {
+        String text = "";
+
+        for (int i = 0; i < 8; i++) {
+            text += "§" + ChatFormatting.values()[(player.getEntityId() >> (4*i)) % 16].getChar();
+        }
+
+        existingNames.add(text);
+
+        setNameTagName(player, text, players);
+
+        PlayerTeam team = new PlayerTeam(new Scoreboard(), player.getName());
+        team.setPlayerPrefix(PaperAdventure.asVanilla(name));
+
+        ClientboundSetPlayerTeamPacket addTeam = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
+        ClientboundSetPlayerTeamPacket addPlayer = ClientboundSetPlayerTeamPacket.createPlayerPacket(team, text, ClientboundSetPlayerTeamPacket.Action.ADD);
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p == player) continue;
-
             ServerPlayer nms = ((CraftPlayer) p).getHandle();
 
-            buf = new FriendlyByteBuf(ByteBufAllocator.DEFAULT.buffer());
-            buf.writeEnumSet(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER), ClientboundPlayerInfoUpdatePacket.Action.class);
-            buf.writeCollection(List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player.getUniqueId(), profile, true, nmsPlayer.latency, nmsPlayer.gameMode.getGameModeForPlayer(), nmsPlayer.getTabListDisplayName(), Optionull.map(nmsPlayer.getChatSession(), RemoteChatSession::asData))),
-                    (buf2, entry) -> {
-                        buf2.writeUUID(entry.profileId());
-
-                        buf2.writeUtf(entry.profile().getName(), 16);
-                        buf2.writeGameProfileProperties(entry.profile().getProperties());
-                    });
-            nms.connection.send(new ClientboundRemoveEntitiesPacket(player.getEntityId()));
-            nmsPlayer.connection.send(new ClientboundPlayerInfoUpdatePacket(buf));
-            nms.connection.send(new ClientboundAddPlayerPacket(((CraftPlayer) player).getHandle()));
-        }*/
+            nms.connection.send(addTeam);
+            nms.connection.send(addPlayer);
+        }
     }
 
     public static String getTextContent(Component component) {

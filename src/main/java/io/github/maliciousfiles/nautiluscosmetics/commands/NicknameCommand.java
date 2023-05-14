@@ -1,9 +1,7 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
-import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
-import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -36,7 +34,7 @@ public class NicknameCommand implements CommandExecutor, TabCompleter {
         if (strings.length < 1) return false;
 
         Consumer<OfflinePlayer> sendNickname = p -> {
-            String nick = Nickname.getPlayerName(p);
+            String nick = Nickname.getNickname(p);
             commandSender.sendMessage(Component.text(p.getName()).append(Component.text(" → ").color(COLOR)).append(p instanceof Player pl ? pl.displayName() : Component.text(nick != null ? nick : p.getName())));
         };
 

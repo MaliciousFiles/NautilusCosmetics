@@ -53,6 +53,18 @@ public class MessageStyler implements Listener {
         return message.args(args);
     }
 
+    private static Component replace(Component component, String target, String replace) {
+        if (component instanceof TextComponent text) text.content(text.content().replace(target, replace));
+
+        List<Component> children = component.children();
+        for (int i = 0; i < children.size(); i++) {
+            children.set(i, replace(children.get(i), target, replace));
+        }
+        component.children(children);
+
+        return component;
+    }
+
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         if (e.deathMessage() == null) return;
@@ -106,7 +118,7 @@ public class MessageStyler implements Listener {
                 Math.round(e.getPlayer().getLocation().getZ()) + ")").color(TextColor.color(118, 118, 118)));
     }
 
-    @EventHandler(priority=EventPriority.HIGH)
+    @EventHandler(priority=EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent e) {
         if (e.joinMessage() == null) return;
 
@@ -194,8 +206,9 @@ public class MessageStyler implements Listener {
                 }
             }
 
-            e.message(message.append(building).color(TextColor.color(200, 200, 200)));
+            e.message(message.append(building));
         }
+        e.message(e.message().color(TextColor.color(200, 200, 200)));
 
         Component message = Component.empty()
                 .append(Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(34, 150, 155)))
@@ -205,10 +218,5 @@ public class MessageStyler implements Listener {
 
         Bukkit.broadcast(message);
         runningMessages.add(message);
-    }
-
-
-    public static String c(String s){
-        return net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', s);
     }
 }
