@@ -3,6 +3,7 @@ package io.github.maliciousfiles.nautiluscosmetics.cosmetics;
 import com.google.common.collect.EvictingQueue;
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
@@ -145,16 +146,67 @@ public class SystemMessageStyler implements Listener {
     }
 
     @EventHandler
-    public void onMessage(PlayerChatEvent e) {
+    public void onMessage(AsyncChatEvent e) {
         e.setCancelled(true);
 
         Calendar c = GregorianCalendar.getInstance();
 
+        if (e.getPlayer().hasPermission("nautiluscosmetics.chat.formatting")) {
+            String contents = NautilusCosmetics.getTextContent(e.message());
+            Component message = Component.empty();
+            Component building = Component.empty();
+
+            for (int i = 0; i < contents.length(); i++) {
+                boolean consumed = false;
+
+                if ((i == 0 || contents.charAt(i-1) != '\\') && contents.charAt(i) == '`' && i < contents.length()-1) {
+                    if (contents.charAt(i+1) == 'x') {
+                        try {
+                            int hex = Integer.parseInt(contents.substring(i+2, i+8), 16);
+                            message = message.append(building);
+                            building = Component.empty().style(building.style()).color(TextColor.color(hex));
+                            i += 7;
+                            consumed = true;
+                        } catch (NumberFormatException ignored) {}
+                    } else {
+                        ChatFormatting formatting = ChatFormatting.getByCode(contents.charAt(i+1));
+
+                        if (contents.charAt(i+1) == '`') {
+                            for (ChatFormatting f : ChatFormatting.values()) {
+                                if (contents.substring(i+2).toUpperCase().startsWith(f.name())) {
+                                    formatting = f;
+                                    i += f.name().length();
+                                    consumed = true;
+                                }
+                            }
+                        }
+
+                        if (formatting != null) {
+                            message = message.append(building);
+                            building = Component.empty().style(building.style());
+
+                            if (formatting.isColor()) building = building.color(PaperAdventure.asAdventure(formatting));
+                            else building = building.decorate(formatting == ChatFormatting.UNDERLINE ? TextDecoration.UNDERLINED : TextDecoration.valueOf(formatting.name()));
+
+                            i++;
+                            consumed = true;
+                        }
+                    }
+                }
+
+                if (!consumed) {
+                    building = building.append(Component.text(contents.charAt(i)));
+                }
+            }
+
+            e.message(message.append(building));
+        }
+
         Component message = Component.empty()
-                .append(Component.text(c.get(Calendar.HOUR)+":"+c.get(Calendar.MINUTE)+" ").color(TextColor.color(47, 250, 255)).decorate(TextDecoration.BOLD))
+                .append(Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(47, 250, 255)).decorate(TextDecoration.BOLD))
                 .append(e.getPlayer().displayName())
                 .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
-                .append(Component.text(e.getMessage()));
+                .append(e.message());
 
         Bukkit.broadcast(message);
         runningMessages.add(message);
