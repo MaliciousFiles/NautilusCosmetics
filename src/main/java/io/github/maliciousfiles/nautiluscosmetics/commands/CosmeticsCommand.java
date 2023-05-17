@@ -5,40 +5,20 @@ import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
 import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
-import io.github.maliciousfiles.nautilusgui.Gui;
-import io.github.maliciousfiles.nautilusgui.components.BackGuiComponent;
-import io.github.maliciousfiles.nautilusgui.components.ButtonGuiComponent;
-import io.github.maliciousfiles.nautilusgui.components.GuiComponent;
-import io.github.maliciousfiles.nautilusgui.components.OpenPageGuiComponent;
-import io.github.maliciousfiles.nautilusgui.page.BasicGuiPage;
-import io.github.maliciousfiles.nautilusgui.page.GuiPage;
-import io.github.maliciousfiles.nautilusgui.page.TextInputGuiPage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.ChatFormatting;
-import net.minecraft.world.item.Items;
-import org.apache.commons.lang.WordUtils;
-import org.apache.commons.lang3.function.TriFunction;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public class CosmeticsCommand implements CommandExecutor, TabCompleter {
 

@@ -4,15 +4,19 @@ import com.mojang.authlib.GameProfile;
 import io.github.maliciousfiles.nautiluscosmetics.commands.CosmeticsCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.FormattingCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.NicknameCommand;
-import io.github.maliciousfiles.nautiluscosmetics.cosmetics.*;
-import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.MessageStyler;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.SponsorChatEffects;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
@@ -21,6 +25,9 @@ import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +35,7 @@ import java.util.List;
 public final class NautilusCosmetics extends JavaPlugin {
 
     public static NautilusCosmetics INSTANCE;
+    public static long SQL_UPDATE_TIME = 10; // in seconds
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
 
     private static final List<String> existingNames = new ArrayList<>();
@@ -41,9 +49,10 @@ public final class NautilusCosmetics extends JavaPlugin {
         this.getCommand("formatting").setExecutor(new FormattingCommand());
 
         Bukkit.getPluginManager().registerEvents(new MessageStyler(), this);
-        Bukkit.getPluginManager().registerEvents(new NameColor.NameColorListener(), this);
-        Bukkit.getPluginManager().registerEvents(new Nickname.NicknameListener(), this);
         Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
+
+        NameColor.init();
+        Nickname.init();
     }
 
     public static void setNameTagName(Player player, String name, Collection<? extends Player> players) {
@@ -105,5 +114,9 @@ public final class NautilusCosmetics extends JavaPlugin {
         if (formatting.isColor()) return component.color(PaperAdventure.asAdventure(formatting));
         else if (formatting.isFormat()) return component.decorate(formatting == ChatFormatting.UNDERLINE ? TextDecoration.UNDERLINED : TextDecoration.valueOf(formatting.name()));
         else return component;
+    }
+
+    public static Connection openSql() throws SQLException  {
+        return DriverManager.getConnection("jdbc:mysql://u34689_IYbiAbvkc4:w4iXxLrkqBJ5nlzyGgzan75X@byrd.bloom.host:3306/s34689_NautilusCosmetics");
     }
 }

@@ -1,6 +1,5 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
-import com.google.common.collect.ImmutableMap;
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
@@ -8,7 +7,6 @@ import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import io.github.maliciousfiles.nautilusgui.Gui;
 import io.github.maliciousfiles.nautilusgui.components.BackGuiComponent;
 import io.github.maliciousfiles.nautilusgui.components.ButtonGuiComponent;
-import io.github.maliciousfiles.nautilusgui.components.GuiComponent;
 import io.github.maliciousfiles.nautilusgui.components.OpenPageGuiComponent;
 import io.github.maliciousfiles.nautilusgui.page.BasicGuiPage;
 import io.github.maliciousfiles.nautilusgui.page.GuiPage;
@@ -33,8 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class CosmeticsMenu {
