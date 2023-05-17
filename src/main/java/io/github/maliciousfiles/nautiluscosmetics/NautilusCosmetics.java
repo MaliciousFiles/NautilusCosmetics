@@ -20,25 +20,31 @@ import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitWorker;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 public final class NautilusCosmetics extends JavaPlugin {
 
     public static NautilusCosmetics INSTANCE;
-    public static long SQL_UPDATE_TIME = 10; // in seconds
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
 
-    private static final List<String> existingNames = new ArrayList<>();
+    public static final BasicDataSource SQL = new BasicDataSource();
+    public static long SQL_UPDATE_TIME; // in seconds
 
     @Override
     public void onEnable() {
@@ -51,8 +57,46 @@ public final class NautilusCosmetics extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new MessageStyler(), this);
         Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
 
+        initConfig();
+
+        FileConfiguration config = getConfig();
+        SQL.setUrl("jdbc:%s://%s:%s@%s:%d/%s".formatted(
+                config.getString("sql.protocol"),
+                config.getString("sql.username"),
+                config.getString("sql.password"),
+                config.getString("sql.host"),
+                config.getInt("sql.port"),
+                config.getString("sql.database")));
+        SQL.setMinIdle(5);
+        SQL.setMaxIdle(10);
+        SQL.setMaxTotal(25);
+
+        try {
+            SQL.getConnection();
+        } catch (SQLException e) {
+            Bukkit.getLogger().log(Level.WARNING, "Can't connect to SQL server! Data will not be saved.", e);
+            try {
+                SQL.close();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        SQL_UPDATE_TIME = getConfig().getLong("sql.update_interval");
+        
         NameColor.init();
         Nickname.init();
+    }
+
+    @Override
+    public void onDisable() {
+        Bukkit.getScheduler().cancelTasks(this);
+
+        try {
+            SQL.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void setNameTagName(Player player, String name, Collection<? extends Player> players) {
@@ -81,8 +125,6 @@ public final class NautilusCosmetics extends JavaPlugin {
 
     public static void updateNameTag(Player player, Component name, Collection<? extends Player> players) {
         String text = "%08x".formatted(player.getEntityId()).replaceAll("(.)", "§$1");
-
-        existingNames.add(text);
 
         setNameTagName(player, text, players);
 
@@ -116,7 +158,17 @@ public final class NautilusCosmetics extends JavaPlugin {
         else return component;
     }
 
-    public static Connection openSql() throws SQLException  {
-        return DriverManager.getConnection("jdbc:mysql://u34689_IYbiAbvkc4:w4iXxLrkqBJ5nlzyGgzan75X@byrd.bloom.host:3306/s34689_NautilusCosmetics");
+    private static void initConfig() {
+        FileConfiguration config = INSTANCE.getConfig();
+        config.addDefault("sql.update_interval", -1);
+        config.addDefault("sql.protocol", "");
+        config.addDefault("sql.host", "");
+        config.addDefault("sql.port", 0);
+        config.addDefault("sql.database", "");
+        config.addDefault("sql.username", "");
+        config.addDefault("sql.password", "");
+
+        config.options().copyDefaults(true);
+        INSTANCE.saveConfig();
     }
 }

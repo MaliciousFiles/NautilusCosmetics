@@ -43,53 +43,58 @@ public class NameColor {
     public static void init() {
         Bukkit.getPluginManager().registerEvents(new NameColor.NameColorListener(), NautilusCosmetics.INSTANCE);
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(NautilusCosmetics.INSTANCE, () -> {
-            try {
-                Connection connection = NautilusCosmetics.openSql();
-                Statement statement = connection.createStatement();
+        if (!NautilusCosmetics.SQL.isClosed()) {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(NautilusCosmetics.INSTANCE, () -> {
+                try {
+                    Connection connection = NautilusCosmetics.SQL.getConnection();
+                    Statement statement = connection.createStatement();
 
-                ResultSet results = statement.executeQuery("SELECT * FROM name_colors");
-                playerColors.clear();
-                while (results.next()) {
-                    FancyText.ColorType type = FancyText.ColorType.values()[results.getInt("color_type")];
-                    TextColor[] colors = new TextColor[type.numColors];
+                    ResultSet results = statement.executeQuery("SELECT * FROM name_colors");
+                    playerColors.clear();
+                    while (results.next()) {
+                        FancyText.ColorType type = FancyText.ColorType.values()[results.getInt("color_type")];
+                        TextColor[] colors = new TextColor[type.numColors];
 
-                    for (int i = 0; i < type.numColors; i++) {
-                        colors[i] = TextColor.color(results.getInt("color"+ (i + 1)));
+                        for (int i = 0; i < type.numColors; i++) {
+                            colors[i] = TextColor.color(results.getInt("color" + (i + 1)));
+                        }
+
+                        playerColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
                     }
 
-                    playerColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
+                    // TODO: make this update in game as in Nickname.java
+                } catch (SQLException e) {
+                    Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
                 }
-
-                // TODO: make this update in game as in Nickname.java
-            } catch (SQLException e) {
-                Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
-            }
-        }, 0, NautilusCosmetics.SQL_UPDATE_TIME*20);
+            }, 0, NautilusCosmetics.SQL_UPDATE_TIME * 20);
+        }
     }
 
     private static void setNameColor(UUID uuid, NameColor color) {
         if (color == null) playerColors.remove(uuid);
         else playerColors.put(uuid, color);
 
-        try {
-            Connection connection = NautilusCosmetics.openSql();
-            Statement statement = connection.createStatement();
+        if (!NautilusCosmetics.SQL.isClosed()) {
+            try {
+                Connection connection = NautilusCosmetics.SQL.getConnection();
+                Statement statement = connection.createStatement();
 
-            if (color == null) {
-                statement.executeUpdate("DELETE FROM name_colors WHERE uuid='" + uuid.toString() + "'");
-            } else {
-                StringBuilder command = new StringBuilder("INSERT INTO name_colors (uuid, color_type");
-                for (int i = 0; i < color.type.numColors; i++) command.append(", color").append(i + 1);
-                command.append(") VALUES ('").append(uuid.toString()).append("', ").append(color.type.ordinal());
-                for (int i = 0; i < color.type.numColors; i++) command.append(", ").append(color.colors[i].value());
-                command.append(") ON DUPLICATE KEY UPDATE color_type=").append(color.type.ordinal());
-                for (int i = 0; i < color.type.numColors; i++) command.append(", color").append(i + 1).append("=").append(color.colors[i].value());
+                if (color == null) {
+                    statement.executeUpdate("DELETE FROM name_colors WHERE uuid='" + uuid.toString() + "'");
+                } else {
+                    StringBuilder command = new StringBuilder("INSERT INTO name_colors (uuid, color_type");
+                    for (int i = 0; i < color.type.numColors; i++) command.append(", color").append(i + 1);
+                    command.append(") VALUES ('").append(uuid.toString()).append("', ").append(color.type.ordinal());
+                    for (int i = 0; i < color.type.numColors; i++) command.append(", ").append(color.colors[i].value());
+                    command.append(") ON DUPLICATE KEY UPDATE color_type=").append(color.type.ordinal());
+                    for (int i = 0; i < color.type.numColors; i++)
+                        command.append(", color").append(i + 1).append("=").append(color.colors[i].value());
 
-                statement.executeUpdate(command.toString());
+                    statement.executeUpdate(command.toString());
+                }
+            } catch (SQLException e) {
+                Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
             }
-        } catch (SQLException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
         }
     }
 

@@ -33,30 +33,42 @@ public class Nickname {
     public static void init() {
         Bukkit.getPluginManager().registerEvents(new NicknameListener(), NautilusCosmetics.INSTANCE);
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(NautilusCosmetics.INSTANCE, () -> {
-            try {
-                Connection connection = NautilusCosmetics.openSql();
-                Statement statement = connection.createStatement();
+        if (!NautilusCosmetics.SQL.isClosed()) {
+            Bukkit.getScheduler().runTaskTimerAsynchronously(NautilusCosmetics.INSTANCE, () -> {
+                try {
+                    Connection connection = NautilusCosmetics.SQL.getConnection();
+                    Statement statement = connection.createStatement();
 
-                ResultSet results = statement.executeQuery("SELECT * FROM nicknames");
+                    ResultSet results = statement.executeQuery("SELECT * FROM nicknames");
 
-                playerNames.clear();
-                while (results.next()) {
-                    playerNames.put(UUID.fromString(results.getString("uuid")), results.getString("nickname"));
-                }
-
-                // TODO: make this validate nicknames
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    String nickname = playerNames.getOrDefault(p.getUniqueId(), p.getName());
-
-                    if (!NautilusCosmetics.getTextContent(p.displayName()).equals(nickname)) {
-                        updateNickname(p, nickname);
+                    playerNames.clear();
+                    while (results.next()) {
+                        playerNames.put(UUID.fromString(results.getString("uuid")), results.getString("nickname"));
                     }
+
+                    // reset any invalid nicknames
+                    playerNames.forEach((uuid, name) -> {
+                        OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
+                        if (validateNickname(p, name) != null) {
+                            setNickname(uuid, null);
+                        }
+                    });
+
+                    Bukkit.broadcastMessage(playerNames.toString());
+
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        String nickname = playerNames.getOrDefault(p.getUniqueId(), p.getName());
+
+                        if (!NautilusCosmetics.getTextContent(p.displayName()).equals(nickname)) {
+                            Bukkit.broadcastMessage("updating name of "+p.getName());
+                            updateNickname(p, nickname);
+                        }
+                    }
+                } catch (SQLException e) {
+                    Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
                 }
-            } catch (SQLException e) {
-                Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
-            }
-        }, 0, NautilusCosmetics.SQL_UPDATE_TIME*20);
+            }, 0, NautilusCosmetics.SQL_UPDATE_TIME * 20);
+        }
     }
 
     /**
@@ -66,17 +78,19 @@ public class Nickname {
         if (nickname == null) playerNames.remove(uuid);
         else playerNames.put(uuid, nickname);
 
-        try {
-            Connection connection = NautilusCosmetics.openSql();
-            Statement statement = connection.createStatement();
+        if (!NautilusCosmetics.SQL.isClosed()) {
+            try {
+                Connection connection = NautilusCosmetics.SQL.getConnection();
+                Statement statement = connection.createStatement();
 
-            if (nickname == null) {
-                statement.executeUpdate("DELETE FROM nicknames WHERE uuid='" + uuid + "'");
-            } else {
-                statement.executeUpdate("INSERT INTO nicknames (uuid, nickname) VALUES ('" + uuid + "', '" + nickname + "') ON DUPLICATE KEY UPDATE nickname='" + nickname + "'");
+                if (nickname == null) {
+                    statement.executeUpdate("DELETE FROM nicknames WHERE uuid='" + uuid + "'");
+                } else {
+                    statement.executeUpdate("INSERT INTO nicknames (uuid, nickname) VALUES ('" + uuid + "', '" + nickname + "') ON DUPLICATE KEY UPDATE nickname='" + nickname + "'");
+                }
+            } catch (SQLException e) {
+                Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
             }
-        } catch (SQLException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
         }
     }
 
@@ -122,19 +136,19 @@ public class Nickname {
      */
     public static void setNickname(Player p, String name, boolean sendMessage) {
         setNickname(p.getUniqueId(), name.equals(p.getName()) ? null : name);
+        updateNickname(p, name);
 
         if (sendMessage) p.sendMessage(Component.text("Nickname set to ").append(p.displayName()));
-        updateNickname(p, name);
     }
 
     /**
      * Make sure a given nickname is valid based on requirements.
      */
-    public static String validateNickname(Player p, String name) {
+    public static String validateNickname(OfflinePlayer p, String name) {
         if (name.length() > 16) return "That nickname is too long";
         if (name.length() < 3) return "That nickname is too short";
-        if (!name.matches("[a-zA-Z0-9_]+") && !p.hasPermission("nautiluscosmetics.nickname.specialchars")) return "Become a supporter to unlock non-alphanumeric characters";
-        if ((!name.equals(playerNames.get(p.getUniqueId())) && playerNames.containsValue(name)) || (!name.equals(p.getName()) && Bukkit.getOfflinePlayerIfCached(name) != null)) return "That nickname is already taken";
+        if (!name.matches("[a-zA-Z0-9_]+") && p.isOnline() && !p.getPlayer().hasPermission("nautiluscosmetics.nickname.specialchars")) return "Become a supporter to unlock non-alphanumeric characters";
+        if (!playerNames.inverse().getOrDefault(name, p.getUniqueId()).equals(p.getUniqueId()) || (!name.equals(p.getName()) && Bukkit.getOfflinePlayerIfCached(name) != null)) return "That nickname is already taken";
 
         return null;
     }
@@ -144,15 +158,27 @@ public class Nickname {
         public void onPlayerJoin(PlayerJoinEvent e) {
             String nick = getNickname(e.getPlayer());
 
+            Component resetMessage = Component.text("Your nickname was reset because a player by that name has joined").color(NautilusCosmetics.ERROR_COLOR);
+            // if there is an online player whose nick is the joining player's name, reset the player's nick
+            // otherwise, it will be reset next time that player joins
+            OfflinePlayer player = getPlayerFromNickname(nick);
+            if (player != null && player.isOnline()) {
+                setNickname(player.getPlayer(), player.getName(), false);
+                player.getPlayer().sendMessage(resetMessage);
+            }
+
             if (nick != null) {
+                // if there is a player whose name is the joining player's nickname, reset the joining player's nick
+                // otherwise, set the
                 if (Bukkit.getOfflinePlayerIfCached(nick) != null) {
                     setNickname(e.getPlayer(), e.getPlayer().getName(), false);
-                    e.getPlayer().sendMessage(Component.text("Your nickname was reset because a player by that name has joined").color(NautilusCosmetics.ERROR_COLOR));
+                    e.getPlayer().sendMessage(resetMessage);
                 } else {
-                    setNickname(e.getPlayer(), getNickname(e.getPlayer()), false);
+                    updateNickname(e.getPlayer(), nick);
                 }
             }
 
+            // send the packets to the joining player for all the online players' name tags
             for (Map.Entry<UUID, String> nickEntry : playerNames.entrySet()) {
                 Player p = Bukkit.getPlayer(nickEntry.getKey());
                 NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
