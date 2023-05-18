@@ -62,6 +62,7 @@ public class NameColor {
                         playerColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
                     }
 
+                    connection.close();
                     // TODO: make this update in game as in Nickname.java
                 } catch (SQLException e) {
                     Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
@@ -92,6 +93,8 @@ public class NameColor {
 
                     statement.executeUpdate(command.toString());
                 }
+
+                connection.close();
             } catch (SQLException e) {
                 Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
             }
@@ -111,10 +114,12 @@ public class NameColor {
     }
 
     public static void setNameColor(Player player, NameColor color, boolean sendMessage) {
-        if (sendMessage) player.sendMessage(FancyText.colorText(color.type, "Name color changed", color.colors));
+        if (!color.equals(getNameColor(player))) {
+            player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
+            NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
+        }
 
-        player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
-        NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
+        if (sendMessage) player.sendMessage(FancyText.colorText(color.type, "Name color changed", color.colors));
     }
 
     public static class NameColorListener implements Listener {

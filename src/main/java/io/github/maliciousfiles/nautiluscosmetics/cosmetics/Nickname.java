@@ -64,6 +64,8 @@ public class Nickname {
                             updateNickname(p, nickname);
                         }
                     }
+
+                    connection.close();
                 } catch (SQLException e) {
                     Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
                 }
@@ -88,6 +90,8 @@ public class Nickname {
                 } else {
                     statement.executeUpdate("INSERT INTO nicknames (uuid, nickname) VALUES ('" + uuid + "', '" + nickname + "') ON DUPLICATE KEY UPDATE nickname='" + nickname + "'");
                 }
+
+                connection.close();
             } catch (SQLException e) {
                 Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
             }
@@ -135,8 +139,10 @@ public class Nickname {
      * Set a player's nickname
      */
     public static void setNickname(Player p, String name, boolean sendMessage) {
-        setNickname(p.getUniqueId(), name.equals(p.getName()) ? null : name);
-        updateNickname(p, name);
+        if (!name.equals(getNickname(p))) {
+            setNickname(p.getUniqueId(), name.equals(p.getName()) ? null : name);
+            updateNickname(p, name);
+        }
 
         if (sendMessage) p.sendMessage(Component.text("Nickname set to ").append(p.displayName()));
     }
@@ -161,7 +167,7 @@ public class Nickname {
             Component resetMessage = Component.text("Your nickname was reset because a player by that name has joined").color(NautilusCosmetics.ERROR_COLOR);
             // if there is an online player whose nick is the joining player's name, reset the player's nick
             // otherwise, it will be reset next time that player joins
-            OfflinePlayer player = getPlayerFromNickname(nick);
+            OfflinePlayer player = getPlayerFromNickname(e.getPlayer().getName());
             if (player != null && player.isOnline()) {
                 setNickname(player.getPlayer(), player.getName(), false);
                 player.getPlayer().sendMessage(resetMessage);

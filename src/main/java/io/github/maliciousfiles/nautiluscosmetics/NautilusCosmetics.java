@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 
 public final class NautilusCosmetics extends JavaPlugin {
@@ -43,7 +44,7 @@ public final class NautilusCosmetics extends JavaPlugin {
     public static NautilusCosmetics INSTANCE;
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
 
-    public static final BasicDataSource SQL = new BasicDataSource();
+    public static BasicDataSource SQL;
     public static long SQL_UPDATE_TIME; // in seconds
 
     @Override
@@ -60,6 +61,8 @@ public final class NautilusCosmetics extends JavaPlugin {
         initConfig();
 
         FileConfiguration config = getConfig();
+        ResourceBundle.clearCache(Thread.currentThread().getContextClassLoader());
+        SQL = new BasicDataSource();
         SQL.setUrl("jdbc:%s://%s:%s@%s:%d/%s".formatted(
                 config.getString("sql.protocol"),
                 config.getString("sql.username"),
@@ -67,12 +70,10 @@ public final class NautilusCosmetics extends JavaPlugin {
                 config.getString("sql.host"),
                 config.getInt("sql.port"),
                 config.getString("sql.database")));
-        SQL.setMinIdle(5);
-        SQL.setMaxIdle(10);
-        SQL.setMaxTotal(25);
+        SQL.setMaxWaitMillis(2000); // just error out if it can't connect
 
         try {
-            SQL.getConnection();
+            SQL.getConnection().close();
         } catch (SQLException e) {
             Bukkit.getLogger().log(Level.WARNING, "Can't connect to SQL server! Data will not be saved.", e);
             try {
