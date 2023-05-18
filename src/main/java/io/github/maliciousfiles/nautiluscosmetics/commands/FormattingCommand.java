@@ -38,7 +38,7 @@ public class FormattingCommand implements CommandExecutor, TabCompleter {
             commandSender.sendMessage(Component.empty()
                     .append(Component.text("----- "))
                     .append(Component.text(WordUtils.capitalizeFully(strings[0])))
-                    .append(Component.text("(Page "+page+"/"+pageMax+") -----"))
+                    .append(Component.text(" (Page "+page+"/"+pageMax+") -----"))
                     .color(COLOR)
                     .decorate(TextDecoration.BOLD));
 
