@@ -124,9 +124,10 @@ public class NameColor {
     }
 
     public static void setNameColor(Player player, FancyText.ColorType type, boolean sendMessage, TextColor... colors) {
-        NameColor color = new NameColor(type, colors);
+        setNameColor(player, sendMessage, new NameColor(type, colors));
+    }
 
-
+    public static void setNameColor(Player player, boolean sendMessage, NameColor color) {
         updateNameColor(player, color, sendMessage);
         setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
     }
