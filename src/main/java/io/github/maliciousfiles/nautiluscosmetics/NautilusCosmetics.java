@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.dbcp2.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
@@ -30,13 +31,15 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
 
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 
 public final class NautilusCosmetics extends JavaPlugin {
@@ -61,7 +64,7 @@ public final class NautilusCosmetics extends JavaPlugin {
         initConfig();
 
         FileConfiguration config = getConfig();
-        ResourceBundle.clearCache(Thread.currentThread().getContextClassLoader());
+
         SQL = new BasicDataSource();
         SQL.setUrl("jdbc:%s://%s:%s@%s:%d/%s".formatted(
                 config.getString("sql.protocol"),

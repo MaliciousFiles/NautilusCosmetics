@@ -54,13 +54,10 @@ public class Nickname {
                         }
                     });
 
-                    Bukkit.broadcastMessage(playerNames.toString());
-
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         String nickname = playerNames.getOrDefault(p.getUniqueId(), p.getName());
 
                         if (!NautilusCosmetics.getTextContent(p.displayName()).equals(nickname)) {
-                            Bukkit.broadcastMessage("updating name of "+p.getName());
                             updateNickname(p, nickname);
                         }
                     }
