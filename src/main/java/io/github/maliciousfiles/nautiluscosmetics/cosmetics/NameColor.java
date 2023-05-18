@@ -4,23 +4,29 @@ import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.persistence.PersistentDataAdapterContext;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 public class NameColor {
+
+    public static final NameColor DEFAULT_COLOR = new NameColor(FancyText.ColorType.SOLID, TextColor.color(255, 255, 255));
+    public static final NamespacedKey NAME_COLOR_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "name_color");
+    public static final PersistentDataType<PersistentDataContainer, NameColor> DATA_TYPE = new NameColorPersistentDataType();
 
     private static final Map<UUID, NameColor> playerColors = new HashMap<>();
 
@@ -38,6 +44,11 @@ public class NameColor {
     private NameColor(FancyText.ColorType type, TextColor... colors) {
         this.type = type;
         this.colors = colors;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof NameColor color && color.type == type && Arrays.equals(color.colors, colors);
     }
 
     public static void init() {
@@ -62,8 +73,15 @@ public class NameColor {
                         playerColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
                     }
 
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        NameColor color = playerColors.getOrDefault(p.getUniqueId(), DEFAULT_COLOR);
+
+                        if (!color.equals(p.getPersistentDataContainer().get(NAME_COLOR_KEY, DATA_TYPE))) {
+                            setNameColor(p, color, false);
+                        }
+                    }
+
                     connection.close();
-                    // TODO: make this update in game as in Nickname.java
                 } catch (SQLException e) {
                     Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
                 }
@@ -75,17 +93,24 @@ public class NameColor {
         if (color == null) playerColors.remove(uuid);
         else playerColors.put(uuid, color);
 
+        OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
+        if (p.isOnline()) {
+            PersistentDataContainer data = p.getPlayer().getPersistentDataContainer();
+            if (color == null) data.remove(NAME_COLOR_KEY);
+            else data.set(NAME_COLOR_KEY, DATA_TYPE, color);
+        }
+
         if (!NautilusCosmetics.SQL.isClosed()) {
             try {
                 Connection connection = NautilusCosmetics.SQL.getConnection();
                 Statement statement = connection.createStatement();
 
                 if (color == null) {
-                    statement.executeUpdate("DELETE FROM name_colors WHERE uuid='" + uuid.toString() + "'");
+                    statement.executeUpdate("DELETE FROM name_colors WHERE uuid='" + uuid + "'");
                 } else {
                     StringBuilder command = new StringBuilder("INSERT INTO name_colors (uuid, color_type");
                     for (int i = 0; i < color.type.numColors; i++) command.append(", color").append(i + 1);
-                    command.append(") VALUES ('").append(uuid.toString()).append("', ").append(color.type.ordinal());
+                    command.append(") VALUES ('").append(uuid).append("', ").append(color.type.ordinal());
                     for (int i = 0; i < color.type.numColors; i++) command.append(", ").append(color.colors[i].value());
                     command.append(") ON DUPLICATE KEY UPDATE color_type=").append(color.type.ordinal());
                     for (int i = 0; i < color.type.numColors; i++)
@@ -104,11 +129,7 @@ public class NameColor {
     public static void setNameColor(Player player, FancyText.ColorType type, boolean sendMessage, TextColor... colors) {
         NameColor color = new NameColor(type, colors);
 
-        if (color.type == FancyText.ColorType.SOLID && color.colors[0].equals(TextColor.color(255, 255, 255))) {
-            setNameColor(player.getUniqueId(), null);
-        } else {
-            setNameColor(player.getUniqueId(), color);
-        }
+        setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
 
         setNameColor(player, color, sendMessage);
     }
@@ -131,6 +152,40 @@ public class NameColor {
                 Player p = Bukkit.getPlayer(entry.getKey());
                 NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
             }
+        }
+    }
+
+    public static class NameColorPersistentDataType implements PersistentDataType<PersistentDataContainer, NameColor> {
+
+        private static final NamespacedKey TYPE_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "COLOR_TYPE");
+        private static final NamespacedKey COLORS_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "COLORS");
+
+        @Override
+        public @NotNull Class<PersistentDataContainer> getPrimitiveType() {
+            return PersistentDataContainer.class;
+        }
+
+        @Override
+        public @NotNull Class<NameColor> getComplexType() {
+            return NameColor.class;
+        }
+
+        @Override
+        public @NotNull PersistentDataContainer toPrimitive(@NotNull NameColor nameColor, @NotNull PersistentDataAdapterContext ctx) {
+            PersistentDataContainer container = ctx.newPersistentDataContainer();
+
+            container.set(TYPE_KEY, PersistentDataType.INTEGER, nameColor.type.ordinal());
+            container.set(COLORS_KEY, PersistentDataType.INTEGER_ARRAY, Arrays.stream(nameColor.colors).mapToInt(TextColor::value).toArray());
+
+            return container;
+        }
+
+        @Override
+        public @NotNull NameColor fromPrimitive(@NotNull PersistentDataContainer container, @NotNull PersistentDataAdapterContext ctx) {
+            return new NameColor(
+                    FancyText.ColorType.values()[container.get(TYPE_KEY, PersistentDataType.INTEGER)],
+                    Arrays.stream(container.get(COLORS_KEY, PersistentDataType.INTEGER_ARRAY))
+                            .mapToObj(TextColor::color).toArray(TextColor[]::new));
         }
     }
 }
