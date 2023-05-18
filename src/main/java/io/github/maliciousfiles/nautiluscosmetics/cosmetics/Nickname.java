@@ -2,8 +2,6 @@ package io.github.maliciousfiles.nautiluscosmetics.cosmetics;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -100,7 +98,7 @@ public class Nickname {
      */
     private static void updateNickname(Player p, String name) {
         p.displayName(Component.text(name));
-        if (NameColor.getNameColor(p) != null) NameColor.setNameColor(p, NameColor.getNameColor(p), false);
+        if (NameColor.getNameColor(p) != null) NameColor.updateNameColor(p, NameColor.getNameColor(p), false);
 
         NautilusCosmetics.updateNameTag(p, p.displayName(), Bukkit.getOnlinePlayers());
 

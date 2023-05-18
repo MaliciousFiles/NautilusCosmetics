@@ -197,7 +197,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
         }
 
         if (strings[1].equals("color")) {
-            NameColor.setNameColor(player, NameColor.DEFAULT_COLOR, true);
+            NameColor.updateNameColor(player, NameColor.DEFAULT_COLOR, true);
             return;
         } else if (strings[1].equals("nickname")) {
             Nickname.setNickname(player, player.getName(), true);

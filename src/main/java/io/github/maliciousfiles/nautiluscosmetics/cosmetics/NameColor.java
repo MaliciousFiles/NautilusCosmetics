@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -25,8 +26,6 @@ import java.util.logging.Level;
 public class NameColor {
 
     public static final NameColor DEFAULT_COLOR = new NameColor(FancyText.ColorType.SOLID, TextColor.color(255, 255, 255));
-    public static final NamespacedKey NAME_COLOR_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "name_color");
-    public static final PersistentDataType<PersistentDataContainer, NameColor> DATA_TYPE = new NameColorPersistentDataType();
 
     private static final Map<UUID, NameColor> playerColors = new HashMap<>();
 
@@ -61,7 +60,8 @@ public class NameColor {
                     Statement statement = connection.createStatement();
 
                     ResultSet results = statement.executeQuery("SELECT * FROM name_colors");
-                    playerColors.clear();
+
+                    Map<UUID, NameColor> newColors = new HashMap<>();
                     while (results.next()) {
                         FancyText.ColorType type = FancyText.ColorType.values()[results.getInt("color_type")];
                         TextColor[] colors = new TextColor[type.numColors];
@@ -70,20 +70,24 @@ public class NameColor {
                             colors[i] = TextColor.color(results.getInt("color" + (i + 1)));
                         }
 
-                        playerColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
+                        newColors.put(UUID.fromString(results.getString("uuid")), new NameColor(type, colors));
                     }
 
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        NameColor color = playerColors.getOrDefault(p.getUniqueId(), DEFAULT_COLOR);
+                        NameColor oldColor = playerColors.getOrDefault(p.getUniqueId(), DEFAULT_COLOR);
+                        NameColor newColor = newColors.getOrDefault(p.getUniqueId(), DEFAULT_COLOR);
 
-                        if (!color.equals(p.getPersistentDataContainer().get(NAME_COLOR_KEY, DATA_TYPE))) {
-                            setNameColor(p, color, false);
+                        if (!oldColor.equals(newColor)) {
+                            updateNameColor(p, newColor, false);
                         }
                     }
 
+                    playerColors.clear();
+                    playerColors.putAll(newColors);
+
                     connection.close();
                 } catch (SQLException e) {
-                    Bukkit.getLogger().log(Level.SEVERE, "Failed to load nicknames!", e);
+                    Bukkit.getLogger().log(Level.SEVERE, "Failed to load name colors!", e);
                 }
             }, 0, NautilusCosmetics.SQL_UPDATE_TIME * 20);
         }
@@ -92,13 +96,6 @@ public class NameColor {
     private static void setNameColor(UUID uuid, NameColor color) {
         if (color == null) playerColors.remove(uuid);
         else playerColors.put(uuid, color);
-
-        OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
-        if (p.isOnline()) {
-            PersistentDataContainer data = p.getPlayer().getPersistentDataContainer();
-            if (color == null) data.remove(NAME_COLOR_KEY);
-            else data.set(NAME_COLOR_KEY, DATA_TYPE, color);
-        }
 
         if (!NautilusCosmetics.SQL.isClosed()) {
             try {
@@ -129,12 +126,12 @@ public class NameColor {
     public static void setNameColor(Player player, FancyText.ColorType type, boolean sendMessage, TextColor... colors) {
         NameColor color = new NameColor(type, colors);
 
-        setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
 
-        setNameColor(player, color, sendMessage);
+        updateNameColor(player, color, sendMessage);
+        setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
     }
 
-    public static void setNameColor(Player player, NameColor color, boolean sendMessage) {
+    public static void updateNameColor(Player player, NameColor color, boolean sendMessage) {
         if (!color.equals(getNameColor(player))) {
             player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
             NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
@@ -146,46 +143,13 @@ public class NameColor {
     public static class NameColorListener implements Listener {
         @EventHandler
         public void onPlayerJoin(PlayerJoinEvent e) {
-            if (getNameColor(e.getPlayer()) != null) setNameColor(e.getPlayer(), getNameColor(e.getPlayer()), false);
+            NameColor color = getNameColor(e.getPlayer());
+            if (color != null && !color.equals(DEFAULT_COLOR)) updateNameColor(e.getPlayer(), color, false);
 
             for (Map.Entry<UUID, NameColor> entry : playerColors.entrySet()) {
                 Player p = Bukkit.getPlayer(entry.getKey());
                 NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
             }
-        }
-    }
-
-    public static class NameColorPersistentDataType implements PersistentDataType<PersistentDataContainer, NameColor> {
-
-        private static final NamespacedKey TYPE_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "COLOR_TYPE");
-        private static final NamespacedKey COLORS_KEY = new NamespacedKey(NautilusCosmetics.INSTANCE, "COLORS");
-
-        @Override
-        public @NotNull Class<PersistentDataContainer> getPrimitiveType() {
-            return PersistentDataContainer.class;
-        }
-
-        @Override
-        public @NotNull Class<NameColor> getComplexType() {
-            return NameColor.class;
-        }
-
-        @Override
-        public @NotNull PersistentDataContainer toPrimitive(@NotNull NameColor nameColor, @NotNull PersistentDataAdapterContext ctx) {
-            PersistentDataContainer container = ctx.newPersistentDataContainer();
-
-            container.set(TYPE_KEY, PersistentDataType.INTEGER, nameColor.type.ordinal());
-            container.set(COLORS_KEY, PersistentDataType.INTEGER_ARRAY, Arrays.stream(nameColor.colors).mapToInt(TextColor::value).toArray());
-
-            return container;
-        }
-
-        @Override
-        public @NotNull NameColor fromPrimitive(@NotNull PersistentDataContainer container, @NotNull PersistentDataAdapterContext ctx) {
-            return new NameColor(
-                    FancyText.ColorType.values()[container.get(TYPE_KEY, PersistentDataType.INTEGER)],
-                    Arrays.stream(container.get(COLORS_KEY, PersistentDataType.INTEGER_ARRAY))
-                            .mapToObj(TextColor::color).toArray(TextColor[]::new));
         }
     }
 }
