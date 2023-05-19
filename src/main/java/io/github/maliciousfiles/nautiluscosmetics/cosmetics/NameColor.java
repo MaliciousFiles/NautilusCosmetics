@@ -78,7 +78,7 @@ public class NameColor {
                         NameColor newColor = newColors.getOrDefault(p.getUniqueId(), DEFAULT_COLOR);
 
                         if (!oldColor.equals(newColor)) {
-                            updateNameColor(p, newColor, false);
+                            updateNameColor(p, newColor);
                         }
                     }
 
@@ -118,7 +118,7 @@ public class NameColor {
 
                 connection.close();
             } catch (SQLException e) {
-                Bukkit.getLogger().log(Level.SEVERE, "Failed to set nickname!", e);
+                Bukkit.getLogger().log(Level.SEVERE, "Failed to set name color!", e);
             }
         }
     }
@@ -128,24 +128,24 @@ public class NameColor {
     }
 
     public static void setNameColor(Player player, boolean sendMessage, NameColor color) {
-        updateNameColor(player, color, sendMessage);
-        setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
-    }
-
-    public static void updateNameColor(Player player, NameColor color, boolean sendMessage) {
         if (!color.equals(getNameColor(player))) {
-            player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
-            NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
+            updateNameColor(player, color);
+            setNameColor(player.getUniqueId(), color.equals(DEFAULT_COLOR) ? null : color);
         }
 
         if (sendMessage) player.sendMessage(FancyText.colorText(color.type, "Name color changed", color.colors));
+    }
+
+    public static void updateNameColor(Player player, NameColor color) {
+        player.displayName(FancyText.colorText(color.type, NautilusCosmetics.getTextContent(player.displayName()), color.colors));
+        NautilusCosmetics.updateNameTag(player, player.displayName(), Bukkit.getOnlinePlayers());
     }
 
     public static class NameColorListener implements Listener {
         @EventHandler
         public void onPlayerJoin(PlayerJoinEvent e) {
             NameColor color = getNameColor(e.getPlayer());
-            if (color != null && !color.equals(DEFAULT_COLOR)) updateNameColor(e.getPlayer(), color, false);
+            if (color != null && !color.equals(DEFAULT_COLOR)) updateNameColor(e.getPlayer(), color);
 
             for (Map.Entry<UUID, NameColor> entry : playerColors.entrySet()) {
                 Player p = Bukkit.getPlayer(entry.getKey());

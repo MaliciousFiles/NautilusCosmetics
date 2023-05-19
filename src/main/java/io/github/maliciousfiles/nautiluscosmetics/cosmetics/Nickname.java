@@ -98,10 +98,9 @@ public class Nickname {
      */
     private static void updateNickname(Player p, String name) {
         p.displayName(Component.text(name));
-        if (NameColor.getNameColor(p) != null) NameColor.updateNameColor(p, NameColor.getNameColor(p), false);
+        if (NameColor.getNameColor(p) != null) NameColor.updateNameColor(p, NameColor.getNameColor(p));
 
         NautilusCosmetics.updateNameTag(p, p.displayName(), Bukkit.getOnlinePlayers());
-
     }
 
     /**
