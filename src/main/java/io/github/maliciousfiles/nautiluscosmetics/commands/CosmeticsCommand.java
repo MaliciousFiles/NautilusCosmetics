@@ -45,11 +45,16 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private Component getUsageMessage(String[] args) {
-        String out = "Usage: /cosmetics ";
+        String out = "";
 
         if (args.length < 1) {
-            out += "<menu|set|clear> [args]";
+            out += "--------------------------------\n";
+            out += "/cosmetics menu [args] - Opens cosmetics menu\n";
+            out += "/cosmetics set [args] - Sets player cosmetic options\n";
+            out += "/cosmetics clear - Clears player cosmetic options\n";
+            out += "--------------------------------";
         } else {
+            out += "Usage: /cosmetics ";
             switch (args[0]) {
                 case "set" -> {
                     if (args.length < 2) {

@@ -2,7 +2,6 @@ package io.github.maliciousfiles.nautiluscosmetics;
 
 import com.mojang.authlib.GameProfile;
 import io.github.maliciousfiles.nautiluscosmetics.commands.CosmeticsCommand;
-import io.github.maliciousfiles.nautiluscosmetics.commands.CustomMsgCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.FormattingCommand;
 import io.github.maliciousfiles.nautiluscosmetics.commands.NicknameCommand;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.MessageStyler;
@@ -27,7 +26,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
@@ -48,20 +46,10 @@ public final class NautilusCosmetics extends JavaPlugin {
 
     public static NautilusCosmetics INSTANCE;
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
-    public static final TextColor DEFAULT_TEXT_COLOR = TextColor.color(200, 200, 200);
+    public static final TextColor CONSOLE_COLOR = TextColor.color(186, 186, 186);
 
     public static BasicDataSource SQL;
     public static long SQL_UPDATE_TIME; // in seconds
-
-    public static final String SPONSOR_PERM_MESSAGE = "Become a sponsor to unlock!";
-    public static final String MODIFY_OTHER_PERM = "nautiluscosmetics.modify_other";
-    public static final String NICKNAME_PERM = "nautiluscosmetics.nickname";
-    public static final String NICKNAME_SPECIAL_CHAR_PERM = "nautiluscosmetics.nickname.special_characters";
-    public static final String CHAT_FORMATTING_PERM = "nautiluscosmetics.chat_formatting";
-
-    /*
-     * Color Type Permissions: nautiluscosmetics.color.[name]
-     */
 
     @Override
     public void onEnable() {
@@ -70,7 +58,6 @@ public final class NautilusCosmetics extends JavaPlugin {
         this.getCommand("cosmetics").setExecutor(new CosmeticsCommand());
         this.getCommand("nickname").setExecutor(new NicknameCommand());
         this.getCommand("formatting").setExecutor(new FormattingCommand());
-        this.getCommand("msg").setExecutor(new CustomMsgCommand());
 
         Bukkit.getPluginManager().registerEvents(new MessageStyler(), this);
         Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
@@ -188,5 +175,17 @@ public final class NautilusCosmetics extends JavaPlugin {
 
         config.options().copyDefaults(true);
         INSTANCE.saveConfig();
+    }
+
+    public static String argsToString(String[] args, int index) {
+        if (index > args.length - 1) {
+            return "";
+        }
+        String returned = "";
+        for (int i = 0; i < args.length - 1; i++) {
+            returned += args[i] + " ";
+        }
+        returned += args[args.length - 1];
+        return returned;
     }
 }

@@ -17,6 +17,16 @@ commands:
     description: Help command for sponsor chat formatting.
     usage: /formatting [code|name] [page]
   msg:
+    description: Send a message to a specified player
+    usage: /msg <player> <message>
+  msgtoggle:
+    description: Toggles specified player as recipient for outgoing chats
+    usage: /msgtoggle <player>
+  reply:
+    description: Replies to last msg
+    usage: /reply
+    aliases: r
+  msg:
     description: Sends a private message to one or more players.
     usage: /msg <player> <message>
     aliases:
