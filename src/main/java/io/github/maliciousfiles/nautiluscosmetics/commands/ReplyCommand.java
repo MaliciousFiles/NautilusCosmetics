@@ -7,13 +7,15 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ReplyCommand implements CommandExecutor {
+public class ReplyCommand implements CommandExecutor, TabCompleter {
 
     private static final Map<UUID, UUID> lastMessager = new HashMap<>();
     private static final Map<UUID, BukkitRunnable> runnables = new HashMap<>();
@@ -58,5 +60,10 @@ public class ReplyCommand implements CommandExecutor {
             runnable.runTaskLater(NautilusCosmetics.INSTANCE, LAST_MESSAGER_TIMEOUT * 20L);
             runnables.put(receiver, runnable);
         }
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
+        return new ArrayList<>();
     }
 }

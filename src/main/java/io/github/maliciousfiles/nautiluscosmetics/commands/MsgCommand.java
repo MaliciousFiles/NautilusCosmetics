@@ -34,17 +34,13 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
                 FancyText.parseChatFormatting(message) :
                 Component.text(message)).color(NautilusCosmetics.DEFAULT_TEXT_COLOR);
 
-        Component name = (commandSender instanceof Player p ? p.displayName() : commandSender.name())
-                .decorate(TextDecoration.ITALIC);
-        name = modifyColor(name, -30, -30, -30);
-
         if (commandSender instanceof Player player) {
             ReplyCommand.messaged(player.getUniqueId(), recipient.getUniqueId());
         }
 
         recipient.sendMessage(Component.empty()
                 .append(MessageStyler.getTimeStamp())
-                .append(name)
+                .append(modifyColor((commandSender instanceof Player p ? p.displayName() : commandSender.name()).decorate(TextDecoration.ITALIC), -30, -30, -30))
                 .append(Component.text(" whispered to you").color(TextColor.color(150, 150, 150)).decorate(TextDecoration.ITALIC))
                 .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
                 .append(msg)
@@ -52,7 +48,7 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
         commandSender.sendMessage(Component.empty()
                 .append(MessageStyler.getTimeStamp())
                 .append(Component.text("You whispered to ").color(TextColor.color(150, 150, 150)).decorate(TextDecoration.ITALIC))
-                .append(name)
+                .append(modifyColor(recipient.displayName(), -30, -30, -30).decorate(TextDecoration.ITALIC))
                 .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
                 .append(msg)
         );
