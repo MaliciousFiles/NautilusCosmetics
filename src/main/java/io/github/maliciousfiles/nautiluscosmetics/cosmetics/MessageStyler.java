@@ -128,6 +128,11 @@ public class MessageStyler implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         if (e.joinMessage() == null) return;
 
+        // send the packets to the joining player for all the online players' name tags
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
+        }
+
         e.joinMessage(Component.empty()
                         .append(Component.text("Join").color(TextColor.color(83, 255, 126)))
                         .append(Component.text(" | ").color(TextColor.color(87, 87, 87)))
@@ -173,10 +178,9 @@ public class MessageStyler implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onMessage(AsyncChatEvent e) {
         e.setCancelled(true);
-
         if (e.getPlayer().hasPermission(NautilusCosmetics.CHAT_FORMATTING_PERM)) {
             e.message(FancyText.parseChatFormatting(NautilusCosmetics.getTextContent(e.message())));
         }

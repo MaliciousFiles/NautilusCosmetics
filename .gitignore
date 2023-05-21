@@ -3,3 +3,5 @@ run
 .run
 # Project exclude paths
 /target/
+.idea
+NautilusCosmetics.iml

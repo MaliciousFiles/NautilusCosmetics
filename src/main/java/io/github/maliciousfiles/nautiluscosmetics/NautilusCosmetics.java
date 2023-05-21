@@ -5,7 +5,6 @@ import io.github.maliciousfiles.nautiluscosmetics.commands.*;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.MessageStyler;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
-import io.github.maliciousfiles.nautiluscosmetics.cosmetics.SponsorChatEffects;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -19,23 +18,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.apache.commons.dbcp2.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scheduler.BukkitWorker;
 
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.URLConnection;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -44,10 +32,20 @@ public final class NautilusCosmetics extends JavaPlugin {
 
     public static NautilusCosmetics INSTANCE;
     public static final TextColor ERROR_COLOR = TextColor.color(255, 42, 52);
-    public static final TextColor CONSOLE_COLOR = TextColor.color(186, 186, 186);
+    public static final TextColor DEFAULT_TEXT_COLOR = TextColor.color(200, 200, 200);
 
     public static BasicDataSource SQL;
     public static long SQL_UPDATE_TIME; // in seconds
+
+    public static final String SPONSOR_PERM_MESSAGE = "Become a sponsor to unlock!";
+    public static final String MODIFY_OTHER_PERM = "nautiluscosmetics.modify_other";
+    public static final String NICKNAME_PERM = "nautiluscosmetics.nickname";
+    public static final String NICKNAME_SPECIAL_CHAR_PERM = "nautiluscosmetics.nickname.special_characters";
+    public static final String CHAT_FORMATTING_PERM = "nautiluscosmetics.chat_formatting";
+
+    /*
+     * Color Type Permissions: nautiluscosmetics.color.[name]
+     */
 
     @Override
     public void onEnable() {
@@ -57,14 +55,12 @@ public final class NautilusCosmetics extends JavaPlugin {
         this.getCommand("nickname").setExecutor(new NicknameCommand());
         this.getCommand("formatting").setExecutor(new FormattingCommand());
         this.getCommand("msg").setExecutor(new MsgCommand());
-        this.getCommand("msg").setTabCompleter(new MsgCommand());
-        this.getCommand("msgtoggle").setExecutor(new MsgtoggleCommand());
-        this.getCommand("msgtoggle").setTabCompleter(new MsgtoggleCommand());
+        this.getCommand("chat").setExecutor(new ChatCommand());
         this.getCommand("reply").setExecutor(new ReplyCommand());
 
 
+        Bukkit.getPluginManager().registerEvents(new ChatCommand.ChatListener(), this);
         Bukkit.getPluginManager().registerEvents(new MessageStyler(), this);
-        Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
 
         initConfig();
 

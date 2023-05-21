@@ -177,12 +177,6 @@ public class Nickname {
                     updateNickname(e.getPlayer(), nick);
                 }
             }
-
-            // send the packets to the joining player for all the online players' name tags
-            for (Map.Entry<UUID, String> nickEntry : playerNames.entrySet()) {
-                Player p = Bukkit.getPlayer(nickEntry.getKey());
-                NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
-            }
         }
     }
 }

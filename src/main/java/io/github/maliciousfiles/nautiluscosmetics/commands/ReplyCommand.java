@@ -1,49 +1,62 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
-import io.github.maliciousfiles.nautiluscosmetics.util.MsgManager;
 import net.kyori.adventure.text.Component;
-import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ReplyCommand implements CommandExecutor {
+
+    private static final Map<UUID, UUID> lastMessager = new HashMap<>();
+    private static final Map<UUID, BukkitRunnable> runnables = new HashMap<>();
+    public static final int LAST_MESSAGER_TIMEOUT = 60; //seconds
+
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
         if (!(commandSender instanceof Player)) {
-            return false;
+            commandSender.sendMessage(Component.text("Only players can use this command").color(NautilusCosmetics.ERROR_COLOR));
+            return true;
         }
+        if (strings.length == 0) return false;
+
         Player player = (Player) commandSender;
-        if (!MsgManager.hasLastMessager(player)) {
-            player.sendMessage(Component.text("No messages to reply to").color(NautilusCosmetics.ERROR_COLOR));
-            player.sendMessage(getUsageMessage());
+
+        if (!lastMessager.containsKey(player.getUniqueId())) {
+            player.sendMessage(Component.text("You have no one to reply to").color(NautilusCosmetics.ERROR_COLOR));
+            return true;
         }
-        Player receiver = MsgManager.getLastMessager(player);
-        assert receiver != null;
-        if (!receiver.isOnline()) {
-            player.sendMessage(Component.text("Player no longer online").color(NautilusCosmetics.ERROR_COLOR));
+
+        OfflinePlayer recipient = Bukkit.getOfflinePlayer(lastMessager.get(player.getUniqueId()));
+        if (!recipient.isOnline()) {
+            player.sendMessage(Component.text(recipient.getName()+" is no longer online").color(NautilusCosmetics.ERROR_COLOR));
+            return true;
         }
-        String str = NautilusCosmetics.argsToString(strings, 0);
-        if (str.equals("")) {
-            player.sendMessage(Component.text("Please provide a message to send").color(NautilusCosmetics.ERROR_COLOR));
-            player.sendMessage(getUsageMessage());
-            return false;
-        }
-        receiver.sendMessage(ChatColor.translateAlternateColorCodes('&', str)); //replace with custom colors???
-        MsgManager.updateLastMessager(receiver, player);
+
+        player.performCommand("msg " + recipient.getName() + " " + String.join(" ", strings));
         return true;
     }
 
-    public Component getUsageMessage() {
-        String text = "/reply <message>";
-        return Component.text(text).color(NautilusCosmetics.CONSOLE_COLOR);
+    public static void messaged(UUID sender, UUID receiver) {
+        lastMessager.put(receiver, sender);
+        if (runnables.containsKey(receiver)) {
+            runnables.get(receiver).cancel();
+            BukkitRunnable runnable = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    lastMessager.remove(receiver);
+                    runnables.remove(receiver);
+                }
+            };
+            runnable.runTaskLater(NautilusCosmetics.INSTANCE, LAST_MESSAGER_TIMEOUT * 20L);
+            runnables.put(receiver, runnable);
+        }
     }
 }

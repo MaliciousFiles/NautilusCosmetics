@@ -146,11 +146,6 @@ public class NameColor {
         public void onPlayerJoin(PlayerJoinEvent e) {
             NameColor color = getNameColor(e.getPlayer());
             if (color != null && !color.equals(DEFAULT_COLOR)) updateNameColor(e.getPlayer(), color);
-
-            for (Map.Entry<UUID, NameColor> entry : playerColors.entrySet()) {
-                Player p = Bukkit.getPlayer(entry.getKey());
-                NautilusCosmetics.updateNameTag(p, p.displayName(), List.of(e.getPlayer()));
-            }
         }
     }
 }

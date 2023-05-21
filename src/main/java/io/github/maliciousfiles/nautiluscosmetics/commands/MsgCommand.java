@@ -1,9 +1,12 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
-import io.github.maliciousfiles.nautiluscosmetics.util.MsgManager;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.MessageStyler;
+import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import net.kyori.adventure.text.Component;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,60 +15,67 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class MsgCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (!(commandSender instanceof Player)) {
-            return false;
-        }
-        Player player = (Player) commandSender;
-        if (MsgManager.isToggled(player)) {
-            Player receiver = MsgManager.getToggledPlayer(player);
-            String str = NautilusCosmetics.argsToString(strings, 0);
-            receiver.sendMessage(ChatColor.translateAlternateColorCodes('&', str)); //replace with custom colors???
-            MsgManager.updateLastMessager(receiver, player);
+        if (strings.length < 2) return false;
+
+        Player recipient = Bukkit.getPlayerExact(strings[0]);
+        if (recipient == null) {
+            commandSender.sendMessage(Component.text("Player not found").color(NautilusCosmetics.ERROR_COLOR));
             return true;
         }
-        else {
-            Player receiver = null;
-            for (Player online : NautilusCosmetics.INSTANCE.getServer().getOnlinePlayers()) {
-                if (strings[0].equalsIgnoreCase(online.getName()) || strings[0].equalsIgnoreCase(online.getDisplayName())) {
-                    receiver = online;
-                }
-            }
-            if (receiver == null) {
-                player.sendMessage(Component.text("Please provide a valid player name").color(NautilusCosmetics.ERROR_COLOR));
-                player.sendMessage(getUsageMessage());
-                return false;
-            }
-            String str = NautilusCosmetics.argsToString(strings, 1);
-            if (str.equals("")) {
-                player.sendMessage(Component.text("Please provide a message to send").color(NautilusCosmetics.ERROR_COLOR));
-                player.sendMessage(getUsageMessage());
-                return false;
-            }
-            receiver.sendMessage(ChatColor.translateAlternateColorCodes('&', str)); //replace with custom colors???
-            MsgManager.updateLastMessager(receiver, player);
-            return true;
+
+        String message = String.join(" ", Arrays.copyOfRange(strings, 1, strings.length));
+
+        Component msg = (commandSender.hasPermission(NautilusCosmetics.CHAT_FORMATTING_PERM) ?
+                FancyText.parseChatFormatting(message) :
+                Component.text(message)).color(NautilusCosmetics.DEFAULT_TEXT_COLOR);
+
+        Component name = (commandSender instanceof Player p ? p.displayName() : commandSender.name())
+                .decorate(TextDecoration.ITALIC);
+        name = modifyColor(name, -30, -30, -30);
+
+        if (commandSender instanceof Player player) {
+            ReplyCommand.messaged(player.getUniqueId(), recipient.getUniqueId());
         }
+
+        recipient.sendMessage(Component.empty()
+                .append(MessageStyler.getTimeStamp())
+                .append(name)
+                .append(Component.text(" whispered to you").color(TextColor.color(150, 150, 150)).decorate(TextDecoration.ITALIC))
+                .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
+                .append(msg)
+        );
+        commandSender.sendMessage(Component.empty()
+                .append(MessageStyler.getTimeStamp())
+                .append(Component.text("You whispered to ").color(TextColor.color(150, 150, 150)).decorate(TextDecoration.ITALIC))
+                .append(name)
+                .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
+                .append(msg)
+        );
+
+        return true;
     }
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        ArrayList<String> args = new ArrayList<>();
+        List<String> out = new ArrayList<>();
+
         if (strings.length == 1) {
-            ArrayList<Player> players = new ArrayList<>(NautilusCosmetics.INSTANCE.getServer().getOnlinePlayers());
-            for (int i = 0; i < players.size(); i++) {
-                args.add(players.get(i).getDisplayName());
-            }
+            out.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
         }
-        return args;
+
+        return out.stream().filter(str->str.toLowerCase().startsWith(strings[strings.length-1].toLowerCase())).toList();
     }
-    public Component getUsageMessage() {
-        String text = "/msg <player> <message>";
-        return Component.text(text).color(NautilusCosmetics.CONSOLE_COLOR);
+
+    public Component modifyColor(Component component, int rMod, int gMod, int bMod) {
+        List<Component> children = new ArrayList<>(component.children());
+        children.replaceAll(c -> modifyColor(c, rMod, gMod, bMod));
+
+        TextColor color = component.color() == null ? TextColor.color(255, 255, 255) : component.color();
+        return component.children(children).color(TextColor.color(color.red()+rMod, color.green()+gMod, color.blue()+bMod));
     }
 }

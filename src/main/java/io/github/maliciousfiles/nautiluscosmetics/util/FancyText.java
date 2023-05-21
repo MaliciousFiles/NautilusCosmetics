@@ -158,16 +158,18 @@ public class FancyText {
 
         ColorType(int numColors, String advancementReq, Material material, TextColor... colors) {
             this.numColors = numColors;
-            this.advancementReq = Bukkit.getAdvancement(NamespacedKey.fromString(advancementReq));
+            this.advancementReq = advancementReq == null ? null : Bukkit.getAdvancement(NamespacedKey.fromString(advancementReq));
 
             this.example = new ItemStack(material);
-            ItemMeta meta = example.getItemMeta();
+            Bukkit.getScheduler().runTaskLater(NautilusCosmetics.INSTANCE, () -> {
+                ItemMeta meta = example.getItemMeta();
 
-            meta.displayName(FancyText
-                    .colorText(this, WordUtils.capitalizeFully(name().replace("_", " ")), colors)
-                    .decoration(TextDecoration.ITALIC, false));
+                meta.displayName(FancyText
+                        .colorText(this, WordUtils.capitalizeFully(name().replace("_", " ")), colors)
+                        .decoration(TextDecoration.ITALIC, false));
 
-            example.setItemMeta(meta);
+                example.setItemMeta(meta);
+            }, 1);
         }
 
         // returns `null` if `sender` has access, otherwise returns the error string
