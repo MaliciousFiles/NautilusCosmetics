@@ -1,10 +1,12 @@
 package io.github.maliciousfiles.nautiluscosmetics.commands;
 
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
+import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,13 +38,15 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player chat = Bukkit.getPlayerExact(strings[0]);
-        if (chat == null) {
-            player.sendMessage(Component.text("Couldn't find player").color(NautilusCosmetics.ERROR_COLOR));
+        OfflinePlayer chat = Nickname.getPlayerFromNickname(strings[0]);
+        if (chat == null) chat = Bukkit.getPlayerExact(strings[0]);
+
+        if (chat == null || !chat.isOnline()) {
+            commandSender.sendMessage(Component.text("Player not found").color(NautilusCosmetics.ERROR_COLOR));
             return true;
         }
 
-        player.sendMessage(Component.text("Now chatting with ").append(chat.displayName()).color(TextColor.color(255, 211, 41)));
+        player.sendMessage(Component.text("Now chatting with ").append(chat.getPlayer().displayName()).color(TextColor.color(255, 211, 41)));
         CHATS.put(player.getUniqueId(), chat.getUniqueId());
 
         return true;
@@ -54,7 +58,7 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
         out.add("all");
 
         if (strings.length == 1) {
-            out.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
+            out.addAll(Bukkit.getOnlinePlayers().stream().map((p) -> NautilusCosmetics.getTextContent(p.displayName())).toList());
         }
 
         return out.stream().filter(str->str.toLowerCase().startsWith(strings[strings.length-1].toLowerCase())).toList();
