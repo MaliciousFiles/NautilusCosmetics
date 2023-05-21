@@ -1,9 +1,7 @@
 package io.github.maliciousfiles.nautiluscosmetics;
 
 import com.mojang.authlib.GameProfile;
-import io.github.maliciousfiles.nautiluscosmetics.commands.CosmeticsCommand;
-import io.github.maliciousfiles.nautiluscosmetics.commands.FormattingCommand;
-import io.github.maliciousfiles.nautiluscosmetics.commands.NicknameCommand;
+import io.github.maliciousfiles.nautiluscosmetics.commands.*;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.MessageStyler;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.NameColor;
 import io.github.maliciousfiles.nautiluscosmetics.cosmetics.Nickname;
@@ -58,6 +56,12 @@ public final class NautilusCosmetics extends JavaPlugin {
         this.getCommand("cosmetics").setExecutor(new CosmeticsCommand());
         this.getCommand("nickname").setExecutor(new NicknameCommand());
         this.getCommand("formatting").setExecutor(new FormattingCommand());
+        this.getCommand("msg").setExecutor(new MsgCommand());
+        this.getCommand("msg").setTabCompleter(new MsgCommand());
+        this.getCommand("msgtoggle").setExecutor(new MsgtoggleCommand());
+        this.getCommand("msgtoggle").setTabCompleter(new MsgtoggleCommand());
+        this.getCommand("reply").setExecutor(new ReplyCommand());
+
 
         Bukkit.getPluginManager().registerEvents(new MessageStyler(), this);
         Bukkit.getPluginManager().registerEvents(new SponsorChatEffects(), this);
