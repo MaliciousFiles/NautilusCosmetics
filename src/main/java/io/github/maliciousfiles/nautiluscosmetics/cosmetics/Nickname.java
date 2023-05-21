@@ -147,7 +147,7 @@ public class Nickname {
     public static String validateNickname(OfflinePlayer p, String name) {
         if (name.length() > 16) return "That nickname is too long";
         if (name.length() < 3) return "That nickname is too short";
-        if (!name.matches("[a-zA-Z0-9_]+") && p.isOnline() && !p.getPlayer().hasPermission("nautiluscosmetics.nickname.specialchars")) return "Become a supporter to unlock non-alphanumeric characters";
+        if (!name.matches("[a-zA-Z0-9_]+") && p.isOnline() && !p.getPlayer().hasPermission(NautilusCosmetics.NICKNAME_SPECIAL_CHAR_PERM)) return "Become a supporter to unlock non-alphanumeric characters";
         if (!playerNames.inverse().getOrDefault(name, p.getUniqueId()).equals(p.getUniqueId()) || (!name.equals(p.getName()) && Bukkit.getOfflinePlayerIfCached(name) != null)) return "That nickname is already taken";
 
         return null;

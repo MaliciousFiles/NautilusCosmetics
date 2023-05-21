@@ -24,7 +24,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
 
     private static final Map<String, Integer> SUBCOMMANDS = ImmutableMap.of(
             "color", 2,
-            "nickname", 2
+            "nickname", 1
     ); // subcommand name to number of arguments (for setting)
 
     @Override
@@ -109,7 +109,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
         }
 
         if (playerIdx!= -1 && strings.length >= playerIdx) {
-            if (!sender.hasPermission("nautiluscosmetics.set.other")) {
+            if (!sender.hasPermission(NautilusCosmetics.MODIFY_OTHER_PERM)) {
                 sender.sendMessage(Component.text("Not enough permissions").style(Style.style(NautilusCosmetics.ERROR_COLOR)));
                 return;
             }
@@ -134,6 +134,12 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
                 return;
             }
 
+            String hasAccess = colorType.get().hasAccess(sender);
+            if (hasAccess != null) {
+                sender.sendMessage(Component.text(hasAccess).color(NautilusCosmetics.ERROR_COLOR));
+                return;
+            }
+
             net.minecraft.network.chat.TextColor colors[] = new net.minecraft.network.chat.TextColor[colorType.get().numColors];
             for (int i = 0; i < colors.length; i++) {
                 colors[i] = net.minecraft.network.chat.TextColor.parseColor(strings[3+i].toLowerCase().replace(' ', '_'));
@@ -148,6 +154,11 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
 
             return;
         } else if (strings[1].equals("nickname")) {
+            if (!sender.hasPermission(NautilusCosmetics.NICKNAME_PERM)) {
+                sender.sendMessage(Component.text(NautilusCosmetics.SPONSOR_PERM_MESSAGE).color(NautilusCosmetics.ERROR_COLOR));
+                return;
+            }
+
             if (strings.length < 3) {
                 sender.sendMessage(getUsageMessage(strings));
                 return;
@@ -176,7 +187,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
         Player player = null;
         if (strings[0].equals("clear")) {
             if (strings.length > 2) {
-                if (!sender.hasPermission("nautiluscosmetics.clear.other")) {
+                if (!sender.hasPermission(NautilusCosmetics.MODIFY_OTHER_PERM)) {
                     sender.sendMessage(Component.text("Not enough permissions").style(Style.style(NautilusCosmetics.ERROR_COLOR)));
                     return;
                 }
@@ -223,7 +234,7 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
             if (strings[0].equals("set")) {
                 if (strings[1].equals("color")) {
                     for (FancyText.ColorType type : FancyText.ColorType.values()) {
-                        if (commandSender.hasPermission("nautiluscosmetics.color."+type.name().toLowerCase())) out.add(type.name().toLowerCase());
+                        if (type.hasAccess(commandSender) == null) out.add(type.name().toLowerCase());
                     }
                 }
             }
@@ -240,11 +251,11 @@ public class CosmeticsCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        if (idx != -1 && strings[0].equals("set") && strings.length == idx && commandSender.hasPermission("nautiluscosmetics.set.other")
+        if (idx != -1 && (strings[0].equals("set") || strings[0].equals("clear")) && strings.length == idx && commandSender.hasPermission(NautilusCosmetics.MODIFY_OTHER_PERM)
         ) {
             out.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
         }
 
-        return out.stream().filter(str->str.startsWith(strings[strings.length-1])).toList();
+        return out.stream().filter(str->str.toLowerCase().startsWith(strings[strings.length-1].toLowerCase())).toList();
     }
 }

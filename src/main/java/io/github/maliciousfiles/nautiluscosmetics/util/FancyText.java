@@ -1,12 +1,25 @@
 package io.github.maliciousfiles.nautiluscosmetics.util;
 
 import com.google.common.collect.ImmutableMap;
+import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.util.HSVLike;
+import net.minecraft.ChatFormatting;
+import org.apache.commons.lang.WordUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 public class FancyText {
     public static final Map<Material, TextColor> DYE_COLORS = ImmutableMap.ofEntries(
@@ -49,17 +62,6 @@ public class FancyText {
             case GRADIENT -> {
                 Component out = Component.empty();
 
-                /*
-                 * text = "HelloWorld!!" (12)
-                 * colors = [RED, BLUE, GREEN]
-                 *
-                 * section 0 = "HelloW" (6)
-                 * section 1 = "orld!!" (6)
-                 *
-                 * i = 0, c = 'H', section = 0, colors = colors[0]-colors[1]
-                 * i = 4, c = 'o', section = 1, colors = colors[1]-colors[2]
-                 */
-
                 int sectionLen = text.length() / (colors.length-1);
                 for (int i = 0; i < text.length(); i++) {
                     int section = i/sectionLen;
@@ -92,16 +94,101 @@ public class FancyText {
         }
     }
 
+    public static Component parseChatFormatting(String message) {
+        Component component = Component.empty();
+        Component building = Component.empty();
+
+        for (int i = 0; i < message.length(); i++) {
+            boolean consumed = false;
+
+            if ((i == 0 || message.charAt(i-1) != '\\') && message.charAt(i) == '`' && i < message.length()-1) {
+                if (message.charAt(i+1) == 'x') {
+                    try {
+                        int hex = Integer.parseInt(message.substring(i+2, i+8), 16);
+                        component = component.append(building);
+                        building = Component.empty().style(building.style()).color(TextColor.color(hex));
+                        i += 7;
+                        consumed = true;
+                    } catch (NumberFormatException ignored) {}
+                } else {
+                    ChatFormatting formatting = ChatFormatting.getByCode(message.charAt(i+1));
+
+                    if (message.charAt(i+1) == '`') {
+                        for (ChatFormatting f : ChatFormatting.values()) {
+                            if (message.substring(i+2).toUpperCase().startsWith(f.name())) {
+                                formatting = f;
+                                i += f.name().length();
+                                consumed = true;
+                            }
+                        }
+                    }
+
+                    if (formatting != null) {
+                        component = component.append(building);
+                        building = NautilusCosmetics.format(Component.empty().style(formatting != ChatFormatting.RESET ? building.style() : Style.empty()), formatting);
+
+                        i++;
+                        consumed = true;
+                    }
+                }
+            }
+
+            if (!consumed) {
+                building = building.append(Component.text(message.charAt(i)));
+            }
+        }
+        
+        return component.append(building);
+    }
+
     public enum ColorType {
-        SOLID(1),
-        GRADIENT(2),
-        ALTERNATING(2),
-        RAINBOW(0);
+        SOLID(1, Material.BLUE_TERRACOTTA, TextColor.color(168, 131, 255)),
+        GRADIENT(2, Material.MAGENTA_GLAZED_TERRACOTTA, TextColor.color(255, 156, 253), TextColor.color(0x56ABFF)),
+        ALTERNATING(2, Material.CYAN_GLAZED_TERRACOTTA, TextColor.color(27, 255, 197), TextColor.color(0x28B592)),
+        RAINBOW(0, "end/dragon_egg", Material.ORANGE_GLAZED_TERRACOTTA);
 
         public final int numColors;
+        public final Advancement advancementReq;
 
-        ColorType(int numColors) {
+        private final ItemStack example;
+
+        ColorType(int numColors, Material material, TextColor... colors) {
+            this(numColors, null, material, colors);
+        }
+
+        ColorType(int numColors, String advancementReq, Material material, TextColor... colors) {
             this.numColors = numColors;
+            this.advancementReq = Bukkit.getAdvancement(NamespacedKey.fromString(advancementReq));
+
+            this.example = new ItemStack(material);
+            ItemMeta meta = example.getItemMeta();
+
+            meta.displayName(FancyText
+                    .colorText(this, WordUtils.capitalizeFully(name().replace("_", " ")), colors)
+                    .decoration(TextDecoration.ITALIC, false));
+
+            example.setItemMeta(meta);
+        }
+
+        // returns `null` if `sender` has access, otherwise returns the error string
+        public String hasAccess(CommandSender sender) {
+            if (sender instanceof Player player && advancementReq != null) {
+                if (!player.getAdvancementProgress(advancementReq).isDone()) {
+                    return "Complete " + advancementReq.displayName() + " to unlock!";
+                }
+
+                return null;
+            }
+
+            if (!sender.hasPermission("nautiluscosmetics.color."+name().toLowerCase())) {
+                return NautilusCosmetics.SPONSOR_PERM_MESSAGE;
+            }
+
+            return null;
+        }
+
+        public ItemStack exampleItem() {
+            return example.clone();
         }
     }
 }

@@ -103,6 +103,6 @@ public class NicknameCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        return out.stream().filter(str->str.startsWith(strings[strings.length-1])).toList();
+        return out.stream().filter(str->str.toLowerCase().startsWith(strings[strings.length-1].toLowerCase())).toList();
     }
 }

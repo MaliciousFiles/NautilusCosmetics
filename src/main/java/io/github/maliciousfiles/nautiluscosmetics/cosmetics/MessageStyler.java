@@ -2,7 +2,9 @@ package io.github.maliciousfiles.nautiluscosmetics.cosmetics;
 
 import com.google.common.collect.EvictingQueue;
 import io.github.maliciousfiles.nautiluscosmetics.NautilusCosmetics;
+import io.github.maliciousfiles.nautiluscosmetics.util.FancyText;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.event.player.AsyncChatCommandDecorateEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -24,9 +26,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -156,67 +162,38 @@ public class MessageStyler implements Listener {
     }
 
     @EventHandler
+    public void onAnvilPrepare(PrepareAnvilEvent e) {
+        String renameText = e.getInventory().getRenameText();
+        ItemStack result = e.getResult();
+
+        if (e.getView().getPlayer().hasPermission(NautilusCosmetics.CHAT_FORMATTING_PERM) && renameText != null && result != null) {
+            ItemMeta meta = result.getItemMeta();
+            meta.displayName(FancyText.parseChatFormatting(renameText));
+            result.setItemMeta(meta);
+        }
+    }
+
+    @EventHandler
     public void onMessage(AsyncChatEvent e) {
         e.setCancelled(true);
 
-        Calendar c = GregorianCalendar.getInstance(TIME_ZONE, e.getPlayer().locale());
-
-        if (e.getPlayer().hasPermission("nautiluscosmetics.chat.formatting")) {
-            String contents = NautilusCosmetics.getTextContent(e.message());
-            Component message = Component.empty();
-            Component building = Component.empty();
-
-            for (int i = 0; i < contents.length(); i++) {
-                boolean consumed = false;
-
-                if ((i == 0 || contents.charAt(i-1) != '\\') && contents.charAt(i) == '`' && i < contents.length()-1) {
-                    if (contents.charAt(i+1) == 'x') {
-                        try {
-                            int hex = Integer.parseInt(contents.substring(i+2, i+8), 16);
-                            message = message.append(building);
-                            building = Component.empty().style(building.style()).color(TextColor.color(hex));
-                            i += 7;
-                            consumed = true;
-                        } catch (NumberFormatException ignored) {}
-                    } else {
-                        ChatFormatting formatting = ChatFormatting.getByCode(contents.charAt(i+1));
-
-                        if (contents.charAt(i+1) == '`') {
-                            for (ChatFormatting f : ChatFormatting.values()) {
-                                if (contents.substring(i+2).toUpperCase().startsWith(f.name())) {
-                                    formatting = f;
-                                    i += f.name().length();
-                                    consumed = true;
-                                }
-                            }
-                        }
-
-                        if (formatting != null) {
-                            message = message.append(building);
-                            building = NautilusCosmetics.format(Component.empty().style(formatting != ChatFormatting.RESET ? building.style() : Style.empty()), formatting);
-
-                            i++;
-                            consumed = true;
-                        }
-                    }
-                }
-
-                if (!consumed) {
-                    building = building.append(Component.text(contents.charAt(i)));
-                }
-            }
-
-            e.message(message.append(building));
+        if (e.getPlayer().hasPermission(NautilusCosmetics.CHAT_FORMATTING_PERM)) {
+            e.message(FancyText.parseChatFormatting(NautilusCosmetics.getTextContent(e.message())));
         }
-        e.message(e.message().color(TextColor.color(200, 200, 200)));
 
         Component message = Component.empty()
-                .append(Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(34, 150, 155)))
+                .append(getTimeStamp())
                 .append(e.getPlayer().displayName())
                 .append(Component.text(" » ").color(TextColor.color(150, 150, 150)))
-                .append(e.message());
+                .append(e.message().color(NautilusCosmetics.DEFAULT_TEXT_COLOR));
 
         Bukkit.broadcast(message);
         runningMessages.add(message);
+    }
+
+    public static Component getTimeStamp() {
+        Calendar c = GregorianCalendar.getInstance(TIME_ZONE);
+
+        return Component.text("%2d:%02d".formatted(c.get(Calendar.HOUR), c.get(Calendar.MINUTE))+" ").color(TextColor.color(34, 150, 155));
     }
 }

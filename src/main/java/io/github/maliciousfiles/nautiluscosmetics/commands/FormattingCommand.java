@@ -89,6 +89,6 @@ public class FormattingCommand implements CommandExecutor, TabCompleter {
             out.add("names");
         }
 
-        return out.stream().filter(s1 -> s1.startsWith(strings[strings.length-1])).toList();
+        return out.stream().filter(s1 -> s1.toLowerCase().startsWith(strings[strings.length-1].toLowerCase())).toList();
     }
 }

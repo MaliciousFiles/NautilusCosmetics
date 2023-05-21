@@ -166,22 +166,14 @@ public class CosmeticsMenu {
 
         FancyText.ColorType[] colorType = new FancyText.ColorType[1];
 
-        Map<FancyText.ColorType, Map.Entry<Material, Map.Entry<TextColor, TextColor>>> items = Map.of(
-                FancyText.ColorType.SOLID, Map.entry(Material.BLUE_TERRACOTTA, Map.entry(TextColor.color(168, 131, 255), TextColor.color(0))),
-                FancyText.ColorType.GRADIENT, Map.entry(Material.MAGENTA_GLAZED_TERRACOTTA, Map.entry(TextColor.color(255, 156, 253), TextColor.color(0x56ABFF))),
-                FancyText.ColorType.ALTERNATING, Map.entry(Material.CYAN_GLAZED_TERRACOTTA, Map.entry(TextColor.color(27, 255, 197), TextColor.color(0x28B592))),
-                FancyText.ColorType.RAINBOW, Map.entry(Material.ORANGE_GLAZED_TERRACOTTA, Map.entry(TextColor.color(0), TextColor.color(0)))
-        );
-
         int i = 0;
         for (FancyText.ColorType type : FancyText.ColorType.values()) {
-            Map.Entry<Material, Map.Entry<TextColor, TextColor>> entry = items.get(type);
-            boolean hasPerm = sender.hasPermission("nautiluscosmetics.color." + type.name().toLowerCase());
+            String hasAccess = type.hasAccess(sender);
 
             int k = i;
             page.addComponent(new ButtonGuiComponent()
                     .setAction(e -> {
-                        if (hasPerm) {
+                        if (hasAccess == null) {
                             if (type.numColors == 0) {
                                 NameColor.setNameColor(sender, type, true);
                                 return;
@@ -195,12 +187,11 @@ public class CosmeticsMenu {
                     })
                     .setCloseOnClick(type.numColors == 0)
                     .setItem(
-                            new ItemStack(hasPerm ? entry.getKey() : Material.BARRIER),
-                            FancyText.colorText(type, WordUtils.capitalizeFully(type.name().replace("_", " ")), entry.getValue().getKey(), entry.getValue().getValue())
-                                    .decoration(TextDecoration.ITALIC, false),
-                            hasPerm ? new Component[]{} :
+                            type.exampleItem(),
+                            null,
+                            hasAccess == null ? new Component[]{} :
                                     new Component[]{
-                                            Component.text("Become a sponsor to unlock!")
+                                            Component.text(hasAccess)
                                                     .color(NautilusCosmetics.ERROR_COLOR)
                                                     .decoration(TextDecoration.ITALIC, false)
                                     }
@@ -219,6 +210,7 @@ public class CosmeticsMenu {
             return;
         }
 
+        boolean hasNicknamePerm = sender.hasPermission(NautilusCosmetics.NICKNAME_PERM);
         Bukkit.getPluginManager().registerEvents(
                 new Gui()
                         .setRoot(new BasicGuiPage()
@@ -235,10 +227,16 @@ public class CosmeticsMenu {
                                 .addComponent(new OpenPageGuiComponent()
                                         .setChildIdx(1)
                                         .setItem(
-                                                new ItemStack(Material.OAK_SIGN),
+                                                new ItemStack(hasNicknamePerm ? Material.OAK_SIGN : Material.BARRIER),
                                                 Component.text("Nickname")
                                                         .color(TextColor.color(33, 245, 169))
-                                                        .decoration(TextDecoration.ITALIC, false)
+                                                        .decoration(TextDecoration.ITALIC, false),
+                                                hasNicknamePerm ? new Component[]{} :
+                                                        new Component[]{
+                                                                Component.text(NautilusCosmetics.SPONSOR_PERM_MESSAGE)
+                                                                        .color(NautilusCosmetics.ERROR_COLOR)
+                                                                        .decoration(TextDecoration.ITALIC, false)
+                                                        }
                                         ), 1, 3)
                                 .addComponent(new BackGuiComponent()
                                         .setItem(
@@ -257,7 +255,7 @@ public class CosmeticsMenu {
                                                         Component.text(" - 3 characters or more").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)),
                                                         Component.text(" - 16 characters or less").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)),
                                                         Component.text(" - Cannot be the same as an existing player name or nickname").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)),
-                                                        !sender.hasPermission("nautiluscosmetics.perks.nickname") ? Component.text(" - No special characters").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)) : null
+                                                        !sender.hasPermission(NautilusCosmetics.NICKNAME_SPECIAL_CHAR_PERM) ? Component.text(" - No special characters").decoration(TextDecoration.ITALIC, false).color(TextColor.color(133, 194, 201)) : null
                                                 ).filter(Objects::nonNull).toArray(Component[]::new))
                                         .setWindowName("Nickname")
                                         .setAction(e-> Nickname.setNickname((Player) e.getWhoClicked(), NautilusCosmetics.getTextContent(e.getCurrentItem().getItemMeta().displayName()), true))
